@@ -15,7 +15,20 @@ docker compose up -d
 
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:4000
-- **Login**: `admin@appforge.local` / `admin123`
+
+### Default admin login
+
+At backend startup, AppForge automatically checks `ADMIN_EMAIL` + `ADMIN_PASSWORD` and seeds an admin user **only if this email does not already exist**.
+
+- First startup with an empty database: admin user is created automatically.
+- Subsequent startups: if user already exists, AppForge does not recreate or overwrite that user/password.
+- Login credentials come from environment variables (`ADMIN_EMAIL`, `ADMIN_PASSWORD`).
+- If env vars are missing, backend logs clearly indicate that admin seeding is skipped/failed.
+
+Default values in this repository:
+
+- `ADMIN_EMAIL=admin@appforge.local`
+- `ADMIN_PASSWORD=admin123`
 
 ## Modules
 
@@ -94,11 +107,69 @@ cp .env.example .env
 
 | Variable | Default | Description |
 |---|---|---|
-| `DATABASE_URL` | postgres://... | PostgreSQL connection string |
+| `DATABASE_URL` | postgresql://... | PostgreSQL connection string |
 | `JWT_SECRET` | super_secret... | JWT signing secret (change in prod) |
-| `ADMIN_EMAIL` | admin@appforge.local | Admin login email |
-| `ADMIN_PASSWORD` | admin123 | Admin login password |
+| `ADMIN_EMAIL` | admin@appforge.local | Admin login email used for startup seeding |
+| `ADMIN_PASSWORD` | admin123 | Admin login password used for startup seeding |
 | `PORT` | 4000 | Backend port |
+
+### Important behavior for existing databases
+
+If your database already contains `ADMIN_EMAIL`, changing `ADMIN_PASSWORD` in `.env` **does not** update that existing password automatically.
+
+This is expected and prevents accidental password overwrite in persistent environments.
+
+## Update application over SSH
+
+Use this workflow on your server to update an existing deployment.
+
+### 1) Connect and go to project folder
+
+```bash
+ssh <user>@<server>
+cd /path/to/AppForge
+```
+
+### 2) Pull latest changes and rebuild/restart containers
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+### 3) Check backend logs
+
+```bash
+docker compose logs -f backend
+```
+
+### 4) Restart services cleanly (without deleting data)
+
+```bash
+docker compose down
+docker compose up -d
+```
+
+### 5) Optional: full test reset (deletes database data)
+
+Use only for non-production/test environments.
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+> `-v` removes Docker volumes, including Postgres data (`postgres_data`).
+> Without `-v`, Postgres data persists across restarts and updates.
+
+## Reset default admin in test environments
+
+If you want AppForge to recreate the default admin from env values:
+
+1. Stop services and delete volumes: `docker compose down -v`
+2. Start again: `docker compose up -d --build`
+
+⚠️ This removes **all** database data (users, roadmap, projects, versions).
 
 ## Stack
 
@@ -124,6 +195,7 @@ AppForge/
 │   └── src/
 │       ├── index.js
 │       ├── middleware/auth.js
+│       ├── utils/seedAdmin.js
 │       └── routes/
 │           ├── auth.js
 │           ├── roadmap.js
