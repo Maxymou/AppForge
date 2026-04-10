@@ -30,6 +30,23 @@ Default values in this repository:
 - `ADMIN_EMAIL=admin@appforge.local`
 - `ADMIN_PASSWORD=admin123`
 
+## Installable PWA
+
+AppForge ships as an installable Progressive Web App. It works as a regular
+responsive web app on desktop and can be installed on the home screen on both
+Android and iPhone:
+
+- **Android / desktop (Chrome / Edge)** — menu → "Install app".
+- **iPhone / iPad (Safari)** — Share → "Add to Home Screen".
+
+Once installed, AppForge runs fullscreen in standalone mode with the brand
+status bar color, stable height across rotations, and correctly handles the
+iPhone notch / home indicator safe areas (no white bar at the bottom).
+
+All the details (how it was wired, how the iOS `--app-height` strategy works,
+how to write new fullscreen screens and modals so they don't regress) are
+documented in [`frontend/docs/PWA_SETUP.md`](frontend/docs/PWA_SETUP.md).
+
 ## Modules
 
 ### 1. Roadmap (Mind Map)

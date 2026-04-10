@@ -2,8 +2,53 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--
+      Viewport: viewport-fit=cover is MANDATORY for iOS standalone PWA so that
+      the app draws under the dynamic island / home indicator and we can use
+      env(safe-area-inset-*) via CSS. maximum-scale=1 + user-scalable=no
+      prevents iOS from zooming on input focus.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+
+    <!-- Theme color: must match --bg-main and manifest background_color -->
+    <meta name="theme-color" content="#090d16" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- Standard PWA -->
+    <meta name="application-name" content="AppForge" />
+    <meta name="description" content="AppForge — visual application builder for roadmap, flows and product architecture." />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- iOS PWA (installable via "Add to Home Screen") -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="AppForge" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/favicon.svg" color="#7c8ff8" />
+
+    <!-- The manifest <link> is injected by vite-plugin-pwa at build time. -->
+
+    <!--
+      Paint the page background BEFORE JS boots. This avoids the white flash
+      on iOS / Android when the PWA launches, and prevents a short blank frame
+      between the HTML parse and the first React render.
+    -->
+    <style>
+      html, body, #root {
+        background-color: #090d16;
+      }
+    </style>
+
     <title>AppForge</title>
   </head>
   <body>

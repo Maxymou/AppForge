@@ -18,7 +18,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-main p-4">
+    // .app-viewport anchors the login shell to the stable --app-height so
+    // the card never jumps when the iOS keyboard opens on focus.
+    // .safe-x / safe-top / safe-bottom paint the notch + home indicator.
+    <div className="app-viewport safe-top safe-bottom safe-x relative items-center justify-center overflow-hidden bg-main p-4">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(124,143,248,0.17),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(62,207,159,0.08),transparent_35%)]" />
       <motion.div
         initial={{ opacity: 0, y: 16 }}

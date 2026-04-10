@@ -92,6 +92,17 @@ export function SectionHeader({ title, subtitle, actions }) {
   )
 }
 
+/**
+ * Modal
+ * -----
+ * Built on top of the .modal-overlay / .modal-sheet / .modal-scroll classes,
+ * which anchor the sheet to --app-height instead of 100vh / 90dvh. This
+ * means the modal never collides with the iOS keyboard nor the home
+ * indicator, and behaves correctly in a PWA fullscreen context.
+ *
+ * The inner body is made scrollable by default so long content (e.g. a
+ * textarea in the project import modal) never pushes the footer off-screen.
+ */
 export function Modal({ open, onClose, title, description, children, footer }) {
   return (
     <AnimatePresence>
@@ -100,7 +111,7 @@ export function Modal({ open, onClose, title, description, children, footer }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm"
+          className="modal-overlay"
           onClick={(e) => e.target === e.currentTarget && onClose?.()}
         >
           <motion.div
@@ -108,14 +119,20 @@ export function Modal({ open, onClose, title, description, children, footer }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="surface-panel w-full max-w-lg p-6"
+            className="modal-sheet"
           >
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-content">{title}</h2>
-              {description ? <p className="mt-1 text-sm text-content-muted">{description}</p> : null}
-            </div>
-            <div>{children}</div>
-            {footer ? <div className="mt-5 flex gap-2">{footer}</div> : null}
+            {(title || description) ? (
+              <div className="border-b border-border-subtle px-6 pb-4 pt-5">
+                {title ? <h2 className="text-lg font-semibold text-content">{title}</h2> : null}
+                {description ? <p className="mt-1 text-sm text-content-muted">{description}</p> : null}
+              </div>
+            ) : null}
+            <div className="modal-scroll px-6 py-5">{children}</div>
+            {footer ? (
+              <div className="flex flex-wrap gap-2 border-t border-border-subtle px-6 py-4">
+                {footer}
+              </div>
+            ) : null}
           </motion.div>
         </motion.div>
       )}
