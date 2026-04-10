@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { memo, useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Badge, Button, IconButton, Input, Textarea } from '../ui/primitives'
 
-export default function NodePanel({ node, onUpdate, onClose, readOnly }) {
+function NodePanel({ node, onUpdate, onClose, readOnly }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [notes, setNotes] = useState('')
@@ -11,19 +11,36 @@ export default function NodePanel({ node, onUpdate, onClose, readOnly }) {
   const [isDirty, setIsDirty] = useState(false)
 
   useEffect(() => {
-    if (node) {
-      setTitle(node.data?.title || node.data?.label || '')
-      setDescription(node.data?.description || '')
-      setNotes(node.data?.notes || '')
-      setItems(node.data?.items || [])
-      setIsDirty(false)
-    }
-  }, [node?.id])
+    if (!node) return
 
-  const save = () => {
+    setTitle(node.data?.title || node.data?.label || '')
+    setDescription(node.data?.description || '')
+    setNotes(node.data?.notes || '')
+    setItems(node.data?.items || [])
+    setNewItem('')
+    setIsDirty(false)
+  }, [node])
+
+  const save = useCallback(() => {
+    if (!node) return
+
     onUpdate?.(node.id, { title, description, notes, items })
     setIsDirty(false)
-  }
+  }, [node, onUpdate, title, description, notes, items])
+
+  const removeItem = useCallback((indexToRemove) => {
+    setItems((currentItems) => currentItems.filter((_, index) => index !== indexToRemove))
+    setIsDirty(true)
+  }, [])
+
+  const addItem = useCallback(() => {
+    const nextItem = newItem.trim()
+    if (!nextItem) return
+
+    setItems((currentItems) => [...currentItems, nextItem])
+    setNewItem('')
+    setIsDirty(true)
+  }, [newItem])
 
   if (!node) return null
 
@@ -62,15 +79,20 @@ export default function NodePanel({ node, onUpdate, onClose, readOnly }) {
                   <motion.div key={`${item}-${idx}`} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="surface-card flex items-center gap-2 px-3 py-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-indigo-300" />
                     <p className="flex-1 truncate text-sm text-slate-200">{item}</p>
-                    {!readOnly ? <IconButton onClick={() => { setItems(items.filter((_, i) => i !== idx)); setIsDirty(true) }}><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></IconButton> : null}
+                    {!readOnly ? <IconButton onClick={() => removeItem(idx)}><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></IconButton> : null}
                   </motion.div>
                 ))}
               </AnimatePresence>
             </div>
             {!readOnly ? (
               <div className="mt-2 flex gap-2">
-                <Input value={newItem} onChange={(e) => setNewItem(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setItems([...items, newItem.trim()].filter(Boolean)), setNewItem(''), setIsDirty(true))} placeholder="Add item..." />
-                <Button size="sm" onClick={() => { if (!newItem.trim()) return; setItems([...items, newItem.trim()]); setNewItem(''); setIsDirty(true) }}>Add</Button>
+                <Input
+                  value={newItem}
+                  onChange={(e) => setNewItem(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addItem()}
+                  placeholder="Add item..."
+                />
+                <Button size="sm" onClick={addItem}>Add</Button>
               </div>
             ) : null}
           </div>
@@ -81,3 +103,5 @@ export default function NodePanel({ node, onUpdate, onClose, readOnly }) {
     </motion.aside>
   )
 }
+
+export default memo(NodePanel)
