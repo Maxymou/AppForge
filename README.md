@@ -10,7 +10,7 @@ Visual application builder with mind map and flow UX modules.
 ## Quick Start
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
 - **Frontend**: http://localhost:3000
@@ -113,6 +113,13 @@ cp .env.example .env
 | `ADMIN_PASSWORD` | admin123 | Admin login password used for startup seeding |
 | `PORT` | 4000 | Backend port |
 
+### Backend runtime compatibility (Prisma + OpenSSL)
+
+The backend container runs Prisma (`prisma generate`, `prisma migrate deploy`) at startup/build time.
+To avoid runtime crashes linked to OpenSSL detection on Alpine, AppForge backend uses a Debian slim Node image with OpenSSL libraries installed in-container.
+
+This keeps deployment reproducible on a clean Ubuntu host with only Docker + Docker Compose installed.
+
 ### Important behavior for existing databases
 
 If your database already contains `ADMIN_EMAIL`, changing `ADMIN_PASSWORD` in `.env` **does not** update that existing password automatically.
@@ -134,20 +141,23 @@ cd /path/to/AppForge
 
 ```bash
 git pull
+docker compose down
 docker compose up -d --build
 ```
 
-### 3) Check backend logs
+### 3) Check services and backend logs
 
 ```bash
-docker compose logs -f backend
+docker compose ps
+docker compose logs --tail=200 backend
+docker compose logs --tail=200 postgres
 ```
 
 ### 4) Restart services cleanly (without deleting data)
 
 ```bash
 docker compose down
-docker compose up -d
+docker compose up -d --build
 ```
 
 ### 5) Optional: full test reset (deletes database data)
@@ -170,6 +180,25 @@ If you want AppForge to recreate the default admin from env values:
 2. Start again: `docker compose up -d --build`
 
 ⚠️ This removes **all** database data (users, roadmap, projects, versions).
+
+## Troubleshooting (backend not starting)
+
+If frontend is up but login fails, check backend and database first:
+
+```bash
+docker compose ps
+docker compose logs --tail=200 backend
+docker compose logs --tail=200 postgres
+```
+
+Typical healthy backend startup logs include:
+
+- `[startup] database connected`
+- `[seed] admin user created: admin@appforge.local` (first boot on empty DB)
+- or `[seed] admin user already exists: admin@appforge.local` (subsequent boots)
+- `AppForge backend running on port 4000`
+
+Reminder: changing `ADMIN_PASSWORD` in `.env` does **not** overwrite an existing admin password if the user already exists in Postgres.
 
 ## Stack
 
