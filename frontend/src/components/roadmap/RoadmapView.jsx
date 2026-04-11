@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import useRoadmapStore from '../../stores/roadmapStore'
 import TreeNode from './TreeNode'
-import { Badge, Button, EmptyState, Input, Modal, SectionHeader, Textarea, useToast } from '../ui/primitives'
+import { ActionMenu, Badge, Button, EmptyState, Input, Modal, SectionHeader, Textarea, useToast } from '../ui/primitives'
 import MobileHeader from '../layout/MobileHeader'
 import SettingsModal from '../layout/SettingsModal'
 
@@ -20,24 +20,13 @@ export default function RoadmapView() {
   useEffect(() => { fetchNodes() }, [])
   useEffect(() => { if (isAddingRoot && rootInputRef.current) rootInputRef.current.focus() }, [isAddingRoot])
 
-  const handleAddRoot = async () => {
-    const trimmed = newRootTitle.trim()
-    if (trimmed) await addNode(trimmed, null)
-    setNewRootTitle('')
-    setIsAddingRoot(false)
-  }
-
+  const handleAddRoot = async () => { const trimmed = newRootTitle.trim(); if (trimmed) await addNode(trimmed, null); setNewRootTitle(''); setIsAddingRoot(false) }
   const handleImport = async () => {
     if (!importText.trim() || !importAcknowledged) return
     setImporting(true)
     const ok = await importMarkdown(importText)
     setImporting(false)
-    if (ok) {
-      toast.success('Roadmap importée')
-      setShowImport(false)
-      setImportText('')
-      setImportAcknowledged(false)
-    } else toast.error("Échec de l'import")
+    if (ok) { toast.success('Roadmap importée'); setShowImport(false); setImportText(''); setImportAcknowledged(false) } else toast.error("Échec de l'import")
   }
 
   const handleExport = async () => (await exportMarkdown()) ? toast.success('Roadmap exportée en roadmap.md') : toast.error("Échec de l'export")
@@ -45,22 +34,14 @@ export default function RoadmapView() {
 
   return (
     <div className="flex h-full flex-col bg-secondary">
-      <MobileHeader
-        title="Roadmap"
-        actions={[
-          { key: 'add', label: 'App section', onClick: () => setIsAddingRoot(true) },
-          { key: 'imp-exp', label: 'Import / Export', onClick: () => setShowImport(true), variant: 'secondary' },
-          { key: 'settings', label: 'Paramètres', onClick: () => setShowSettings(true), variant: 'secondary' }
-        ]}
-      />
+      <MobileHeader title="Roadmap" actions={[{ key: 'add', label: 'Ajouter', onClick: () => setIsAddingRoot(true) }]} menuActions={[{ key: 'import', label: 'Importer', onClick: () => setShowImport(true) }, { key: 'export', label: 'Exporter', onClick: handleExport }, { key: 'settings', label: 'Paramètres', onClick: () => setShowSettings(true) }]} />
 
       <div className="hidden border-b border-border-subtle px-5 py-4 md:block md:px-7">
         <SectionHeader
           title="Roadmap"
           subtitle={nodes.length ? `${nodes.length} sections • ${totalItems} éléments` : 'Structurez vos sections et éléments produit'}
           actions={[
-            <Button key="export" variant="secondary" onClick={handleExport}>Exporter</Button>,
-            <Button key="import" variant="secondary" onClick={() => setShowImport(true)}>Importer</Button>,
+            <ActionMenu key="menu" label="Actions" items={[{ key: 'import', label: 'Importer', onClick: () => setShowImport(true) }, { key: 'export', label: 'Exporter', onClick: handleExport }, { key: 'settings', label: 'Paramètres', onClick: () => setShowSettings(true) }]} />,
             <Button key="add" onClick={() => setIsAddingRoot(true)}>Ajouter une section</Button>
           ]}
         />
@@ -79,10 +60,7 @@ export default function RoadmapView() {
         )}
       </div>
 
-      <Modal open={showImport} onClose={() => !importing && setShowImport(false)} title="Importer la roadmap" description="Le markdown remplacera entièrement le contenu actuel." footer={[
-        <Button key="cancel" variant="secondary" onClick={() => setShowImport(false)} disabled={importing}>Annuler</Button>,
-        <Button key="confirm" variant="danger" onClick={handleImport} disabled={importing || !importText.trim() || !importAcknowledged}>{importing ? 'Import en cours...' : 'Remplacer la roadmap'}</Button>
-      ]}>
+      <Modal open={showImport} onClose={() => !importing && setShowImport(false)} title="Importer la roadmap" description="Le markdown remplacera entièrement le contenu actuel." footer={[<Button key="cancel" variant="secondary" onClick={() => setShowImport(false)} disabled={importing}>Annuler</Button>, <Button key="confirm" variant="danger" onClick={handleImport} disabled={importing || !importText.trim() || !importAcknowledged}>{importing ? 'Import en cours...' : 'Remplacer la roadmap'}</Button>]}>
         <div className="mb-3 flex items-center gap-2"><Badge tone="warning">Action destructive</Badge><span className="text-xs text-content-muted">Les sections actuelles seront supprimées.</span></div>
         <Textarea value={importText} onChange={(e) => setImportText(e.target.value)} rows={12} className="font-mono" placeholder={'# Frontend\n- Navbar'} />
         <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-content-muted"><input type="checkbox" checked={importAcknowledged} onChange={(e) => setImportAcknowledged(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-border-subtle bg-surface accent-indigo-400" /><span>Je comprends que cela remplace la roadmap actuelle.</span></label>
@@ -95,9 +73,6 @@ export default function RoadmapView() {
 function countAllNodes(nodes) {
   if (!Array.isArray(nodes)) return 0
   let total = 0
-  for (const n of nodes) {
-    total += 1
-    if (n.children?.length) total += countAllNodes(n.children)
-  }
+  for (const n of nodes) { total += 1; if (n.children?.length) total += countAllNodes(n.children) }
   return total
 }

@@ -51,6 +51,7 @@ documented in [`frontend/docs/PWA_SETUP.md`](frontend/docs/PWA_SETUP.md).
 
 AppForge ships a pragmatic, keyboard-friendly UX:
 
+- **Navigation produit clarifiée** — la navigation principale se concentre désormais sur **Roadmap**, **Projets** et **Liens**, tandis que la déconnexion est regroupée dans **Paramètres**.
 - **Consistent confirmations** — every destructive action (delete a
   section, delete a project, delete a node, rollback a version, replace
   a canvas on import) goes through a styled confirm dialog with a clear
