@@ -4,12 +4,15 @@ const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+const ALLOWED_STATUSES = new Set(['idee', 'en_cours', 'deploye', 'termine']);
 
 // Parse project markdown format
 function parseProjectMarkdown(markdown) {
   const result = {
     name: '',
     description: '',
+    status: 'idee',
+    comment: '',
     flow: '',
     nodes: [],
     context: '',
@@ -35,6 +38,16 @@ function parseProjectMarkdown(markdown) {
     // Project name
     if (trimmed.startsWith('# PROJECT:')) {
       result.name = trimmed.replace('# PROJECT:', '').trim();
+      continue;
+    }
+
+    // Section headers
+    if (trimmed.startsWith('> Status:')) {
+      result.status = trimmed.replace('> Status:', '').trim() || 'idee';
+      continue;
+    }
+    if (trimmed.startsWith('> Comment:')) {
+      result.comment = trimmed.replace('> Comment:', '').trim();
       continue;
     }
 
@@ -129,6 +142,9 @@ function parseProjectMarkdown(markdown) {
 // Export project to markdown
 function projectToMarkdown(project, nodes, edges) {
   let md = `# PROJECT: ${project.name}\n\n`;
+  md += `> Status: ${project.status || 'idee'}\n`;
+  if (project.comment) md += `> Comment: ${project.comment}\n`;
+  md += '\n';
 
   // FLOW section - build from edges
   md += `## FLOW\n`;
@@ -197,6 +213,9 @@ router.post('/', authMiddleware, async (req, res) => {
   if (!name) {
     return res.status(400).json({ error: 'Name is required' });
   }
+  if (status && !ALLOWED_STATUSES.has(status)) {
+    return res.status(400).json({ error: 'Statut invalide' });
+  }
   try {
     const project = await prisma.project.create({
       data: { name, description: description || null, status: status || "idee", comment: comment || null }
@@ -233,6 +252,9 @@ router.get('/:id', authMiddleware, async (req, res) => {
 router.put('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
   const { name, description, readOnly, status, comment } = req.body;
+  if (status && !ALLOWED_STATUSES.has(status)) {
+    return res.status(400).json({ error: 'Statut invalide' });
+  }
   try {
     const existing = await prisma.project.findUnique({ where: { id } });
     if (!existing) {
@@ -352,7 +374,7 @@ router.delete('/:id/nodes/:nodeId', authMiddleware, async (req, res) => {
 // POST /api/projects/:id/edges
 router.post('/:id/edges', authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const { edgeId, source, target, sourceHandle } = req.body;
+  const { edgeId, source, target, sourceHandle, targetHandle } = req.body;
   if (!edgeId || !source || !target) {
     return res.status(400).json({ error: 'edgeId, source and target are required' });
   }
@@ -362,7 +384,7 @@ router.post('/:id/edges', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Project not found' });
     }
     const edge = await prisma.projectEdge.create({
-      data: { projectId: id, edgeId, source, target, sourceHandle: sourceHandle || null }
+      data: { projectId: id, edgeId, source, target, sourceHandle: sourceHandle || null, targetHandle: targetHandle || null }
     });
     return res.status(201).json(edge);
   } catch (err) {
@@ -438,7 +460,8 @@ router.post('/:id/save', authMiddleware, async (req, res) => {
           edgeId: edge.id,
           source: edge.source,
           target: edge.target,
-          sourceHandle: edge.sourceHandle || null
+          sourceHandle: edge.sourceHandle || null,
+          targetHandle: edge.targetHandle || null
         }
       });
     }
@@ -525,7 +548,8 @@ router.post('/:id/versions/:versionId/rollback', authMiddleware, async (req, res
           edgeId: edge.id,
           source: edge.source,
           target: edge.target,
-          sourceHandle: edge.sourceHandle || null
+          sourceHandle: edge.sourceHandle || null,
+          targetHandle: edge.targetHandle || null
         }
       });
     }
@@ -569,6 +593,8 @@ router.post('/:id/duplicate', authMiddleware, async (req, res) => {
       data: {
         name: `${project.name} (copy)`,
         description: project.description,
+        status: project.status,
+        comment: project.comment,
         readOnly: false
       }
     });
@@ -595,7 +621,8 @@ router.post('/:id/duplicate', authMiddleware, async (req, res) => {
           edgeId: edge.edgeId,
           source: edge.source,
           target: edge.target,
-          sourceHandle: edge.sourceHandle || null
+          sourceHandle: edge.sourceHandle || null,
+          targetHandle: edge.targetHandle || null
         }
       });
     }
@@ -637,7 +664,9 @@ router.post('/:id/import', authMiddleware, async (req, res) => {
       where: { id },
       data: {
         name: parsed.name || project.name,
-        description: parsed.context || project.description
+        description: parsed.context || project.description,
+        status: ALLOWED_STATUSES.has(parsed.status) ? parsed.status : project.status,
+        comment: parsed.comment || project.comment
       }
     });
 

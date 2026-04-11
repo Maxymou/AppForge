@@ -13,7 +13,7 @@ const NODE_TYPES = { custom: CustomNode }
 const DEFAULT_EDGE_OPTIONS = { type: 'smoothstep', style: { stroke: '#5f74dd', strokeWidth: 2 } }
 const mapProjectToFlow = (project) => ({
   rfNodes: (project.nodes || []).map((n) => ({ id: n.nodeId, type: 'custom', position: { x: n.posX, y: n.posY }, data: { title: n.title, label: n.title, description: n.description || '', notes: n.notes || '', items: n.items || [] } })),
-  rfEdges: (project.edges || []).map((e) => ({ id: e.edgeId, source: e.source, target: e.target, sourceHandle: e.sourceHandle || null, ...DEFAULT_EDGE_OPTIONS }))
+  rfEdges: (project.edges || []).map((e) => ({ id: e.edgeId, source: e.source, target: e.target, sourceHandle: e.sourceHandle || null, targetHandle: e.targetHandle || null, ...DEFAULT_EDGE_OPTIONS }))
 })
 
 export default function FlowCanvas() {

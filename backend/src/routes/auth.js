@@ -38,7 +38,23 @@ router.get('/me', authMiddleware, async (req, res) => {
 router.put('/me', authMiddleware, async (req, res) => {
   const { username, email } = req.body;
   try {
-    const updated = await prisma.user.update({ where: { id: req.user.userId }, data: { ...(username !== undefined && { username }), ...(email !== undefined && { email }) } });
+    const payload = {};
+    if (username !== undefined) {
+      if (!username.trim()) return res.status(400).json({ error: "Le nom d'utilisateur est requis" });
+      payload.username = username.trim();
+    }
+    if (email !== undefined) {
+      const normalizedEmail = email.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+        return res.status(400).json({ error: 'Email invalide' });
+      }
+      const duplicate = await prisma.user.findFirst({
+        where: { email: normalizedEmail, NOT: { id: req.user.userId } }
+      });
+      if (duplicate) return res.status(409).json({ error: 'Cet email est déjà utilisé' });
+      payload.email = normalizedEmail;
+    }
+    const updated = await prisma.user.update({ where: { id: req.user.userId }, data: payload });
     return res.json({ id: updated.id, username: updated.username, email: updated.email });
   } catch (err) {
     return res.status(400).json({ error: 'Mise à jour impossible' });
@@ -48,6 +64,7 @@ router.put('/me', authMiddleware, async (req, res) => {
 router.put('/password', authMiddleware, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Champs requis' });
+  if (newPassword.length < 8) return res.status(400).json({ error: 'Le nouveau mot de passe doit contenir au moins 8 caractères' });
   try {
     const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
     const valid = await bcrypt.compare(currentPassword, user.password);

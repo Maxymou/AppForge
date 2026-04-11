@@ -77,6 +77,8 @@ AppForge ships a pragmatic, keyboard-friendly UX:
 ### 1. Roadmap (Mind Map)
 - Tree structure with sections and items
 - Inline editing — double-click OR use the pencil tooltip button
+- Édition enrichie par item: **titre**, **commentaire** et **bloc code**
+- Aperçu condensé des commentaires/code directement dans la liste pour rester lisible
 - Add / delete nodes via confirm dialog (no more raw `window.confirm`)
 - Import / Export as `roadmap.md` with an explicit "replace roadmap"
   acknowledgement before the destructive import fires
@@ -96,6 +98,8 @@ AppForge ships a pragmatic, keyboard-friendly UX:
 - Full-screen React Flow canvas with enlarged, higher-contrast handles
 - Drag & drop nodes
 - Connect nodes with edges
+- Connexions avancées: chaque item d'un nœud expose sa propre sortie connectable
+- Persistance des connexions par `sourceHandle` (+ `targetHandle` prêt pour la suite)
 - Click a node → side panel (title, description, notes, items) with
   sticky footer save button and an explicit "Unsaved changes" badge
 - Auto-save (2s debounce) with toast confirmation on manual save
@@ -104,6 +108,7 @@ AppForge ships a pragmatic, keyboard-friendly UX:
   badge on the latest snapshot
 - Rollback goes through a confirm dialog (no silent data loss)
 - Duplicate projects (confirmation toast on success)
+- Métadonnées projet enrichies: `status` (`idée`, `en cours`, `déployé`, `terminé`) + commentaire
 - Read-only mode (unchanged)
 - Import / Export as `project.md`, with the same explicit
   "replace canvas" acknowledgement as the roadmap import
@@ -144,6 +149,16 @@ Tu dois :
 IMPORTANT :
 Retourne EXACTEMENT ce fichier modifié.
 ```
+
+### 3. Liens (persistés en base)
+- CRUD complet des liens (`title`, `url`, `note`) via API backend
+- Validation d'URL côté serveur
+- Données isolées par utilisateur authentifié
+
+### 4. Paramètres utilisateur
+- Mise à jour du profil (`username`, `email`) avec validation email + unicité
+- Changement de mot de passe (vérification du mot de passe actuel + longueur minimale)
+- Déconnexion depuis la modale Paramètres
 
 ## Configuration
 
