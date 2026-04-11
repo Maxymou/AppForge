@@ -33,6 +33,8 @@ export default function FlowCanvas() {
   const [importAcknowledged, setImportAcknowledged] = useState(false)
   const [loading, setLoading] = useState(true)
   const { isMobileViewport, isStandalonePWA, isDesktop } = useDeviceMode()
+  const showMiniMap = isDesktop && !isStandalonePWA
+  const showControls = isDesktop && !isStandalonePWA
   const isReadOnly = currentProject?.readOnly || false
   const nodesRef = useRef(nodes); const edgesRef = useRef(edges)
 
@@ -70,8 +72,8 @@ export default function FlowCanvas() {
         <div className="relative min-h-0 flex-1">
           <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={handleConnect} onNodeClick={(_, node) => setSelectedNodeId(node.id)} onPaneClick={() => setSelectedNodeId(null)} nodeTypes={NODE_TYPES} defaultEdgeOptions={DEFAULT_EDGE_OPTIONS} fitView nodesDraggable={!isReadOnly} nodesConnectable={!isReadOnly} deleteKeyCode={null} style={{ background: '#0b111d' }}>
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#1f2c41" />
-            {isDesktop ? <Controls /> : null}
-            {isDesktop ? <MiniMap nodeColor="#6f82ef" maskColor="rgba(11,17,29,0.76)" /> : null}
+            {showControls ? <Controls /> : null}
+            {showMiniMap ? <MiniMap nodeColor="#6f82ef" maskColor="rgba(11,17,29,0.76)" /> : null}
           </ReactFlow>
         </div>
       </div>
