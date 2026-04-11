@@ -125,6 +125,35 @@ body {
   padding-bottom: var(--sab);
 }
 
+
+/* Mobile floating nav: keeps home-indicator area visually continuous while
+   giving the nav a softer, less outlined floating surface. */
+.mobile-nav-region {
+  position: relative;
+  padding-top: 0.3rem;
+  padding-bottom: calc(var(--sab) + 0.45rem);
+  background: linear-gradient(180deg, transparent 0%, rgba(9, 13, 22, 0.82) 72%, rgba(9, 13, 22, 0.96) 100%);
+}
+
+.mobile-nav-region::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--sal) + 1rem);
+  right: calc(var(--sar) + 1rem);
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(147, 163, 188, 0.22), transparent);
+  pointer-events: none;
+}
+
+.mobile-nav-surface {
+  background: rgba(18, 26, 42, 0.74);
+  border: 1px solid rgba(148, 170, 210, 0.14);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px) saturate(125%);
+  -webkit-backdrop-filter: blur(14px) saturate(125%);
+}
+
 .safe-x {
   padding-left: var(--sal);
   padding-right: var(--sar);
