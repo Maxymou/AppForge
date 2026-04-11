@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { createPortal } from 'react-dom'
 
 export function cn(...classes) {
   return classes.filter(Boolean).join(' ')
@@ -44,17 +45,86 @@ export function IconButton({ children, className = '', variant = 'ghost', label,
 }
 
 export function ActionMenu({ label = 'Actions', items = [] }) {
+  const [open, setOpen] = useState(false)
+  const [position, setPosition] = useState({ top: 0, left: 0, minWidth: 0 })
+  const triggerRef = useRef(null)
+  const menuRef = useRef(null)
+
+  const updatePosition = useCallback(() => {
+    if (!triggerRef.current || typeof window === 'undefined') return
+
+    const rect = triggerRef.current.getBoundingClientRect()
+    const viewportPadding = 8
+    const menuWidth = menuRef.current?.offsetWidth || 176
+    const menuHeight = menuRef.current?.offsetHeight || 0
+
+    let left = rect.right - menuWidth
+    if (left < viewportPadding) left = viewportPadding
+    if (left + menuWidth > window.innerWidth - viewportPadding) left = Math.max(viewportPadding, window.innerWidth - menuWidth - viewportPadding)
+
+    let top = rect.bottom + 8
+    if (menuHeight && top + menuHeight > window.innerHeight - viewportPadding) {
+      top = Math.max(viewportPadding, rect.top - menuHeight - 8)
+    }
+
+    setPosition({
+      top,
+      left,
+      minWidth: rect.width
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!open) return undefined
+    updatePosition()
+    const handlePointer = (event) => {
+      if (
+        !triggerRef.current?.contains(event.target) &&
+        !menuRef.current?.contains(event.target)
+      ) {
+        setOpen(false)
+      }
+    }
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    document.addEventListener('pointerdown', handlePointer)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+      document.removeEventListener('pointerdown', handlePointer)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [open, updatePosition])
+
+  const menuContent = (
+    <div ref={menuRef} className="w-44 rounded-xl border border-border-subtle bg-surface p-1.5 shadow-[0_16px_34px_rgba(0,0,0,0.4)]" style={{ position: 'fixed', top: `${position.top}px`, left: `${position.left}px`, minWidth: `${position.minWidth}px`, zIndex: 'var(--z-dropdown)' }}>
+      {items.map((item) => (
+        <button
+          key={item.key}
+          onClick={() => {
+            item.onClick?.()
+            setOpen(false)
+          }}
+          className={cn('flex w-full rounded-lg px-2.5 py-2 text-left text-xs transition', item.danger ? 'text-red-200 hover:bg-red-500/10' : 'text-content-muted hover:bg-surface-elevated hover:text-content')}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  )
+
   return (
-    <details className="relative">
-      <summary className="btn btn-secondary btn-sm list-none cursor-pointer">{label}</summary>
-      <div className="absolute right-0 z-30 mt-2 w-44 rounded-xl border border-border-subtle bg-surface p-1.5 shadow-[0_16px_34px_rgba(0,0,0,0.4)]">
-        {items.map((item) => (
-          <button key={item.key} onClick={item.onClick} className={cn('flex w-full rounded-lg px-2.5 py-2 text-left text-xs transition', item.danger ? 'text-red-200 hover:bg-red-500/10' : 'text-content-muted hover:bg-surface-elevated hover:text-content')}>
-            {item.label}
-          </button>
-        ))}
-      </div>
-    </details>
+    <>
+      <button ref={triggerRef} type="button" className="btn btn-secondary btn-sm" onClick={() => setOpen((current) => !current)} aria-haspopup="menu" aria-expanded={open}>
+        {label}
+      </button>
+      {open && typeof document !== 'undefined' ? createPortal(menuContent, document.body) : null}
+    </>
   )
 }
 

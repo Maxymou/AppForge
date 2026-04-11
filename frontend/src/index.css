@@ -17,6 +17,11 @@
   --success: #3ecf9f;
   --warning: #e9b44c;
   --danger: #f87171;
+  --z-base-canvas: 0;
+  --z-navigation: 20;
+  --z-dropdown: 80;
+  --z-modal: 100;
+  --z-overlay-critical: 120;
 
   /* Safe area insets (populated from env() — see below).
      Fallbacks to 0px on non-notched devices and desktops. */
@@ -144,7 +149,7 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -407,6 +412,7 @@ body {
 }
 .react-flow__controls,
 .react-flow__minimap {
+  z-index: var(--z-navigation) !important;
   background: rgba(18, 26, 42, 0.94) !important;
   border: 1px solid #2b3953 !important;
   border-radius: 12px !important;
@@ -447,7 +453,7 @@ body {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
   opacity: 0;
   transition: opacity 0.14s ease, transform 0.14s ease;
-  z-index: 40;
+  z-index: var(--z-dropdown);
 }
 
 .tooltip-top .tooltip-bubble { bottom: calc(100% + 6px); }
@@ -466,7 +472,7 @@ body {
 /* ---------- Toast stack ---------- */
 .toast-stack {
   position: fixed;
-  z-index: 60;
+  z-index: var(--z-overlay-critical);
   right: calc(1rem + var(--sar));
   bottom: calc(1rem + var(--sab));
   display: flex;
