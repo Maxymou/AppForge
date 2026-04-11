@@ -1,18 +1,43 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ReactFlow, Background, Controls, MiniMap, addEdge, useNodesState, useEdgesState, BackgroundVariant, Panel } from '@xyflow/react'
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  MiniMap,
+  addEdge,
+  useNodesState,
+  useEdgesState,
+  BackgroundVariant,
+  Panel
+} from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { motion } from 'framer-motion'
 import useProjectStore from '../../stores/projectStore'
 import CustomNode from './CustomNode'
 import NodePanel from './NodePanel'
-import { Badge, Button, Modal, Textarea } from '../ui/primitives'
+import {
+  Badge,
+  Button,
+  ConfirmDialog,
+  Modal,
+  Textarea,
+  useToast
+} from '../ui/primitives'
 
 const NODE_TYPES = { custom: CustomNode }
 const EDGE_STYLE = { stroke: '#5f74dd', strokeWidth: 2 }
 const DEFAULT_EDGE_OPTIONS = { type: 'smoothstep', style: EDGE_STYLE }
 const FIT_VIEW_OPTIONS = { padding: 0.2 }
 const CANVAS_STYLE = { background: '#0b111d' }
+
+// Approximate dimensions used for the non-overlap placement heuristic.
+// React Flow doesn't provide measured rects synchronously, so we use a
+// conservative bounding box.
+const NEW_NODE_WIDTH = 240
+const NEW_NODE_HEIGHT = 150
+const GRID_STEP = 40
+const PLACEMENT_PADDING = 32
 
 const mapProjectToFlow = (project) => {
   const rfNodes = (project.nodes || []).map((n) => ({
@@ -38,9 +63,65 @@ const mapProjectToFlow = (project) => {
   return { rfNodes, rfEdges }
 }
 
+/**
+ * Find a non-overlapping position for a new node, anchored near the
+ * last-created node (or the existing cluster) and falling back to a
+ * spiral sweep if collisions pile up.
+ */
+const findFreePosition = (existingNodes) => {
+  if (!existingNodes || existingNodes.length === 0) {
+    return { x: 160, y: 160 }
+  }
+
+  // Anchor near the rightmost node so the graph grows naturally left→right.
+  const sorted = [...existingNodes].sort((a, b) => b.position.x - a.position.x)
+  const anchor = sorted[0]
+  let candidate = {
+    x: anchor.position.x + NEW_NODE_WIDTH + PLACEMENT_PADDING,
+    y: anchor.position.y
+  }
+
+  const overlaps = (pos) =>
+    existingNodes.some((node) => {
+      const dx = Math.abs(node.position.x - pos.x)
+      const dy = Math.abs(node.position.y - pos.y)
+      return dx < NEW_NODE_WIDTH && dy < NEW_NODE_HEIGHT
+    })
+
+  if (!overlaps(candidate)) return candidate
+
+  // Spiral sweep: try positions around the anchor in expanding rings.
+  const offsets = [
+    [0, 1],
+    [1, 0],
+    [0, -1],
+    [-1, 0],
+    [1, 1],
+    [1, -1],
+    [-1, 1],
+    [-1, -1]
+  ]
+  for (let ring = 1; ring <= 12; ring += 1) {
+    for (const [dx, dy] of offsets) {
+      candidate = {
+        x: anchor.position.x + dx * (NEW_NODE_WIDTH + PLACEMENT_PADDING) * ring,
+        y: anchor.position.y + dy * (NEW_NODE_HEIGHT + PLACEMENT_PADDING) * ring
+      }
+      if (!overlaps(candidate)) return candidate
+    }
+  }
+
+  // Fallback: snap to grid a few steps below the anchor.
+  return {
+    x: Math.round(anchor.position.x / GRID_STEP) * GRID_STEP,
+    y: Math.round(anchor.position.y / GRID_STEP) * GRID_STEP + (NEW_NODE_HEIGHT + PLACEMENT_PADDING)
+  }
+}
+
 export default function FlowCanvas() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const toast = useToast()
 
   const currentProject = useProjectStore((state) => state.currentProject)
   const versions = useProjectStore((state) => state.versions)
@@ -58,9 +139,13 @@ export default function FlowCanvas() {
   const [showVersions, setShowVersions] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [importText, setImportText] = useState('')
+  const [importAcknowledged, setImportAcknowledged] = useState(false)
+  const [importing, setImporting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmRestore, setConfirmRestore] = useState(null)
 
   const autoSaveTimer = useRef(null)
   const nodesRef = useRef(nodes)
@@ -79,6 +164,13 @@ export default function FlowCanvas() {
     () => nodes.find((node) => node.id === selectedNodeId) || null,
     [nodes, selectedNodeId]
   )
+
+  const edgeCountForSelection = useMemo(() => {
+    if (!selectedNodeId) return 0
+    return edges.filter(
+      (edge) => edge.source === selectedNodeId || edge.target === selectedNodeId
+    ).length
+  }, [edges, selectedNodeId])
 
   const performSave = useCallback(async () => {
     if (isReadOnly || !id) return
@@ -174,11 +266,18 @@ export default function FlowCanvas() {
   )
 
   const handleAddNode = useCallback(() => {
+    const position = findFreePosition(nodesRef.current)
     const node = {
       id: `node-${Date.now()}`,
       type: 'custom',
-      position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
-      data: { title: 'New Node', label: 'New Node', description: '', notes: '', items: [] }
+      position,
+      data: {
+        title: 'New Node',
+        label: 'New Node',
+        description: '',
+        notes: '',
+        items: []
+      }
     }
 
     setNodes((currentNodes) => [...currentNodes, node])
@@ -186,16 +285,21 @@ export default function FlowCanvas() {
     triggerAutoSave()
   }, [setNodes, triggerAutoSave])
 
-  const handleDeleteNode = useCallback(() => {
+  const performDeleteNode = useCallback(() => {
     if (!selectedNodeId) return
+
+    const nodeLabel =
+      nodesRef.current.find((n) => n.id === selectedNodeId)?.data?.title || 'Node'
 
     setNodes((currentNodes) => currentNodes.filter((node) => node.id !== selectedNodeId))
     setEdges((currentEdges) =>
       currentEdges.filter((edge) => edge.source !== selectedNodeId && edge.target !== selectedNodeId)
     )
     setSelectedNodeId(null)
+    setConfirmDelete(false)
     triggerAutoSave()
-  }, [selectedNodeId, setNodes, setEdges, triggerAutoSave])
+    toast.info(`"${nodeLabel}" removed`)
+  }, [selectedNodeId, setNodes, setEdges, triggerAutoSave, toast])
 
   const handleNodeUpdate = useCallback(
     (nodeId, data) => {
@@ -217,30 +321,37 @@ export default function FlowCanvas() {
     }
 
     await performSave()
-  }, [performSave])
+    toast.success('Project saved')
+  }, [performSave, toast])
 
-  const handleRestoreVersion = useCallback(
-    async (versionId) => {
-      const confirmed = window.confirm('Rollback to this version? Current changes will be lost.')
-      if (!confirmed) return
+  const handleRestoreVersion = useCallback(async () => {
+    if (!confirmRestore) return
 
-      const project = await rollback(id, versionId)
-      if (!project) return
+    const project = await rollback(id, confirmRestore.id)
+    setConfirmRestore(null)
+    if (!project) {
+      toast.error('Failed to restore version')
+      return
+    }
 
-      const { rfNodes, rfEdges } = mapProjectToFlow(project)
-      setNodes(rfNodes)
-      setEdges(rfEdges)
-      setSelectedNodeId(null)
-      setShowVersions(false)
-    },
-    [id, rollback, setNodes, setEdges]
-  )
+    const { rfNodes, rfEdges } = mapProjectToFlow(project)
+    setNodes(rfNodes)
+    setEdges(rfEdges)
+    setSelectedNodeId(null)
+    setShowVersions(false)
+    toast.success('Version restored')
+  }, [confirmRestore, id, rollback, setNodes, setEdges, toast])
 
   const handleImport = useCallback(async () => {
-    if (!importText.trim()) return
+    if (!importText.trim() || !importAcknowledged) return
 
+    setImporting(true)
     const project = await importProject(id, importText)
-    if (!project) return
+    setImporting(false)
+    if (!project) {
+      toast.error('Import failed. Check the markdown format.')
+      return
+    }
 
     const { rfNodes, rfEdges } = mapProjectToFlow(project)
     setNodes(rfNodes)
@@ -248,7 +359,23 @@ export default function FlowCanvas() {
     setSelectedNodeId(null)
     setShowImport(false)
     setImportText('')
-  }, [id, importProject, importText, setNodes, setEdges])
+    setImportAcknowledged(false)
+    toast.success('Project imported')
+  }, [id, importProject, importText, importAcknowledged, setNodes, setEdges, toast])
+
+  const handleExport = useCallback(async () => {
+    const ok = await exportProject(id)
+    if (ok) {
+      toast.success('Project exported as markdown')
+    } else {
+      toast.error('Export failed')
+    }
+  }, [exportProject, id, toast])
+
+  const openVersions = useCallback(async () => {
+    await fetchVersions(id)
+    setShowVersions(true)
+  }, [fetchVersions, id])
 
   if (loading) {
     return (
@@ -266,13 +393,19 @@ export default function FlowCanvas() {
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-3 md:px-5">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/projects')} className="icon-btn icon-btn-ghost">
+            <button
+              onClick={() => navigate('/projects')}
+              className="icon-btn icon-btn-ghost"
+              aria-label="Back to projects"
+            >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <div>
-              <h2 className="text-sm font-semibold text-content md:text-base">{currentProject?.name}</h2>
+              <h2 className="text-sm font-semibold text-content md:text-base">
+                {currentProject?.name}
+              </h2>
               <div className="mt-1 flex items-center gap-2 text-xs text-content-muted">
                 {saving ? (
                   <span className="flex items-center gap-1">
@@ -285,7 +418,8 @@ export default function FlowCanvas() {
                 ) : null}
                 {!saving && lastSaved ? (
                   <span>
-                    Saved {lastSaved.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    Saved{' '}
+                    {lastSaved.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 ) : null}
                 {isReadOnly ? <Badge tone="warning">Read-only</Badge> : null}
@@ -294,10 +428,14 @@ export default function FlowCanvas() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {!isReadOnly ? <Button size="sm" onClick={handleAddNode}>Add Node</Button> : null}
+            {!isReadOnly ? (
+              <Button size="sm" onClick={handleAddNode}>
+                Add Node
+              </Button>
+            ) : null}
             {!isReadOnly && selectedNodeId ? (
-              <Button size="sm" variant="danger" onClick={handleDeleteNode}>
-                Delete
+              <Button size="sm" variant="danger" onClick={() => setConfirmDelete(true)}>
+                Delete Node
               </Button>
             ) : null}
             {!isReadOnly ? (
@@ -308,17 +446,10 @@ export default function FlowCanvas() {
             <Button size="sm" variant="secondary" onClick={() => setShowImport(true)}>
               Import
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => exportProject(id)}>
+            <Button size="sm" variant="secondary" onClick={handleExport}>
               Export
             </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={async () => {
-                await fetchVersions(id)
-                setShowVersions(true)
-              }}
-            >
+            <Button size="sm" variant="secondary" onClick={openVersions}>
               History
             </Button>
           </div>
@@ -354,11 +485,30 @@ export default function FlowCanvas() {
             <MiniMap nodeColor="#6f82ef" maskColor="rgba(11,17,29,0.76)" />
             {nodes.length === 0 ? (
               <Panel position="top-center">
-                <div className="pointer-events-none mt-20 rounded-2xl border border-border-subtle bg-surface px-6 py-5 text-center">
-                  <p className="text-lg font-semibold text-content">Canvas is empty</p>
+                <div className="pointer-events-auto mt-20 max-w-sm rounded-2xl border border-border-subtle bg-surface px-6 py-5 text-center shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-border-subtle bg-surface-elevated">
+                    <svg className="h-5 w-5 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.8}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-base font-semibold text-content">Canvas is empty</p>
                   <p className="mt-1 text-sm text-content-muted">
-                    {isReadOnly ? 'This project is read-only.' : 'Click Add Node to start building your flow.'}
+                    {isReadOnly
+                      ? 'This project is read-only.'
+                      : 'Add your first node to start mapping out your flow.'}
                   </p>
+                  {!isReadOnly ? (
+                    <div className="mt-4">
+                      <Button size="sm" onClick={handleAddNode}>
+                        Add first node
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
               </Panel>
             ) : null}
@@ -379,67 +529,143 @@ export default function FlowCanvas() {
         open={showVersions}
         onClose={() => setShowVersions(false)}
         title="Version history"
-        description="Restore a previous snapshot if needed."
+        description="AppForge snapshots your project automatically. Restore any previous state here."
       >
-        <div className="max-h-96 space-y-2 overflow-y-auto">
+        <div className="max-h-96 space-y-2 overflow-y-auto pr-1">
           {versions.length === 0 ? (
             <div className="rounded-xl border border-border-subtle bg-surface-elevated px-4 py-6 text-center text-sm text-content-muted">
               No versions saved yet.
             </div>
           ) : (
-            versions.map((version, index) => (
-              <motion.div
-                key={version.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="surface-card flex items-center justify-between p-3"
-              >
-                <div>
-                  <p className="text-sm font-medium text-content">
-                    {index === 0 ? 'Latest' : `Version ${versions.length - index}`}
-                  </p>
-                  <p className="text-xs text-content-muted">
-                    {new Date(version.createdAt).toLocaleString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
-                {!isReadOnly ? (
-                  <Button size="sm" variant="secondary" onClick={() => handleRestoreVersion(version.id)}>
-                    Restore
-                  </Button>
-                ) : null}
-              </motion.div>
-            ))
+            versions.map((version, index) => {
+              const isLatest = index === 0
+              const label = isLatest ? 'Latest version' : `Version ${versions.length - index}`
+              return (
+                <motion.div
+                  key={version.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="surface-card flex items-start justify-between gap-3 p-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium text-content">{label}</p>
+                      {isLatest ? <Badge tone="success">Current</Badge> : null}
+                    </div>
+                    <p className="mt-1 text-xs text-content-muted">
+                      {new Date(version.createdAt).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                  {!isReadOnly && !isLatest ? (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setConfirmRestore(version)}
+                    >
+                      Restore
+                    </Button>
+                  ) : null}
+                </motion.div>
+              )
+            })
           )}
         </div>
       </Modal>
 
       <Modal
         open={showImport}
-        onClose={() => setShowImport(false)}
+        onClose={() => {
+          if (!importing) {
+            setShowImport(false)
+            setImportAcknowledged(false)
+          }
+        }}
         title="Import project"
-        description="Paste project markdown. Current flow will be replaced."
+        description="Paste project markdown below. The current canvas will be completely replaced."
         footer={[
-          <Button key="import" onClick={handleImport} disabled={!importText.trim()}>
-            Import
-          </Button>,
-          <Button key="cancel" variant="secondary" onClick={() => setShowImport(false)}>
+          <Button
+            key="cancel"
+            variant="secondary"
+            onClick={() => setShowImport(false)}
+            disabled={importing}
+          >
             Cancel
+          </Button>,
+          <Button
+            key="import"
+            variant="danger"
+            onClick={handleImport}
+            disabled={!importText.trim() || !importAcknowledged || importing}
+          >
+            {importing ? 'Importing...' : 'Replace project'}
           </Button>
         ]}
       >
+        <div className="mb-3 flex items-center gap-2">
+          <Badge tone="warning">Destructive action</Badge>
+          <span className="text-xs text-content-muted">
+            A new version will be created automatically before replacement.
+          </span>
+        </div>
         <Textarea
           value={importText}
           onChange={(e) => setImportText(e.target.value)}
           rows={12}
           className="font-mono"
-          placeholder="# PROJECT: My App\n## FLOW\nLogin → Dashboard"
+          placeholder={'# PROJECT: My App\n## FLOW\nLogin → Dashboard'}
+          aria-label="Project markdown"
         />
+        <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-content-muted">
+          <input
+            type="checkbox"
+            checked={importAcknowledged}
+            onChange={(e) => setImportAcknowledged(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-border-subtle bg-surface accent-indigo-400"
+          />
+          <span>I understand this will replace the current canvas content.</span>
+        </label>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={performDeleteNode}
+        title="Delete node?"
+        description={
+          selectedNode
+            ? `"${selectedNode.data?.title || 'Untitled'}" will be removed from the canvas.`
+            : undefined
+        }
+        details={[
+          'The node and its content will be permanently removed.',
+          edgeCountForSelection
+            ? `${edgeCountForSelection} connected ${
+                edgeCountForSelection === 1 ? 'edge' : 'edges'
+              } will also be removed.`
+            : 'No connected edges.'
+        ]}
+        confirmLabel="Delete node"
+      />
+
+      <ConfirmDialog
+        open={Boolean(confirmRestore)}
+        onClose={() => setConfirmRestore(null)}
+        onConfirm={handleRestoreVersion}
+        title="Restore this version?"
+        description="The current canvas state will be replaced."
+        details={[
+          'Unsaved changes will be lost.',
+          'A new entry will be added to version history.'
+        ]}
+        confirmLabel="Restore"
+        tone="warning"
+      />
     </div>
   )
 }

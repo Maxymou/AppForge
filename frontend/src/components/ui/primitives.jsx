@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export function cn(...classes) {
@@ -34,21 +34,29 @@ export function Button({ children, className = '', variant = 'primary', size = '
   )
 }
 
-export function IconButton({ children, className = '', variant = 'ghost', ...props }) {
-  return (
+export function IconButton({ children, className = '', variant = 'ghost', label, tooltip, ...props }) {
+  const ariaLabel = props['aria-label'] || label || tooltip
+  const button = (
     <motion.button
       whileHover={{ scale: props.disabled ? 1 : 1.04 }}
       whileTap={{ scale: props.disabled ? 1 : 0.96 }}
       className={cn('icon-btn', `icon-btn-${variant}`, className)}
+      aria-label={ariaLabel}
       {...props}
     >
       {children}
     </motion.button>
   )
+
+  if (tooltip) {
+    return <Tooltip label={tooltip}>{button}</Tooltip>
+  }
+
+  return button
 }
 
-export function Card({ className = '', children }) {
-  return <div className={cn('surface-card', className)}>{children}</div>
+export function Card({ className = '', children, ...rest }) {
+  return <div className={cn('surface-card', className)} {...rest}>{children}</div>
 }
 
 export function Panel({ className = '', children }) {
@@ -93,6 +101,24 @@ export function SectionHeader({ title, subtitle, actions }) {
 }
 
 /**
+ * Tooltip
+ * -------
+ * Lightweight, CSS-driven tooltip: shows on hover (desktop) and on focus
+ * (keyboard navigation). On touch devices hover doesn't apply — consumers
+ * should always pair icon-only buttons with a proper aria-label so the
+ * action stays discoverable.
+ */
+export function Tooltip({ label, side = 'top', children }) {
+  if (!label) return children
+  return (
+    <span className={cn('tooltip-wrapper', `tooltip-${side}`)}>
+      {children}
+      <span className="tooltip-bubble" role="tooltip">{label}</span>
+    </span>
+  )
+}
+
+/**
  * Modal
  * -----
  * Built on top of the .modal-overlay / .modal-sheet / .modal-scroll classes,
@@ -103,7 +129,16 @@ export function SectionHeader({ title, subtitle, actions }) {
  * The inner body is made scrollable by default so long content (e.g. a
  * textarea in the project import modal) never pushes the footer off-screen.
  */
-export function Modal({ open, onClose, title, description, children, footer }) {
+export function Modal({ open, onClose, title, description, children, footer, size = 'md' }) {
+  useEffect(() => {
+    if (!open) return undefined
+    const onKey = (event) => {
+      if (event.key === 'Escape') onClose?.()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
   return (
     <AnimatePresence>
       {open && (
@@ -113,13 +148,16 @@ export function Modal({ open, onClose, title, description, children, footer }) {
           exit={{ opacity: 0 }}
           className="modal-overlay"
           onClick={(e) => e.target === e.currentTarget && onClose?.()}
+          role="dialog"
+          aria-modal="true"
+          aria-label={title || 'Dialog'}
         >
           <motion.div
             initial={{ opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="modal-sheet"
+            className={cn('modal-sheet', `modal-sheet-${size}`)}
           >
             {(title || description) ? (
               <div className="border-b border-border-subtle px-6 pb-4 pt-5">
@@ -129,7 +167,7 @@ export function Modal({ open, onClose, title, description, children, footer }) {
             ) : null}
             <div className="modal-scroll px-6 py-5">{children}</div>
             {footer ? (
-              <div className="flex flex-wrap gap-2 border-t border-border-subtle px-6 py-4">
+              <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border-subtle px-6 py-4">
                 {footer}
               </div>
             ) : null}
@@ -138,4 +176,170 @@ export function Modal({ open, onClose, title, description, children, footer }) {
       )}
     </AnimatePresence>
   )
+}
+
+/**
+ * ConfirmDialog
+ * -------------
+ * Drop-in replacement for window.confirm. Used for every destructive
+ * action across AppForge so users always get a consistent, styled
+ * confirmation path.
+ *
+ * Props:
+ *   open                 boolean
+ *   title                short headline
+ *   description          paragraph explaining the impact
+ *   details              optional array of bullet points (extra context)
+ *   confirmLabel         CTA label (default "Delete")
+ *   cancelLabel          cancel label (default "Cancel")
+ *   tone                 "danger" (default) | "warning" | "primary"
+ *   onConfirm            async-safe callback
+ *   onClose              callback to dismiss the dialog
+ */
+export function ConfirmDialog({
+  open,
+  title = 'Are you sure?',
+  description,
+  details,
+  confirmLabel = 'Delete',
+  cancelLabel = 'Cancel',
+  tone = 'danger',
+  onConfirm,
+  onClose,
+  busy = false
+}) {
+  const confirmVariant = tone === 'danger' ? 'danger' : tone === 'warning' ? 'secondary' : 'primary'
+
+  return (
+    <Modal
+      open={open}
+      onClose={busy ? undefined : onClose}
+      title={title}
+      description={description}
+      footer={[
+        <Button key="cancel" variant="secondary" onClick={onClose} disabled={busy}>{cancelLabel}</Button>,
+        <Button
+          key="confirm"
+          variant={confirmVariant}
+          onClick={async () => {
+            if (busy) return
+            await onConfirm?.()
+          }}
+          disabled={busy}
+        >
+          {busy ? 'Working...' : confirmLabel}
+        </Button>
+      ]}
+    >
+      {tone === 'danger' ? (
+        <div className="mb-3"><Badge tone="warning">This action cannot be undone</Badge></div>
+      ) : null}
+      {details?.length ? (
+        <ul className="mt-1 space-y-1.5 rounded-xl border border-border-subtle bg-surface-elevated/60 px-4 py-3 text-sm text-content-muted">
+          {details.map((item, idx) => (
+            <li key={idx} className="flex items-start gap-2">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-300" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </Modal>
+  )
+}
+
+/**
+ * Toast system
+ * ------------
+ * Tiny in-house toast store — no external lib. Wrap the app in
+ * <ToastProvider/> once and use `useToast()` anywhere to push a toast.
+ */
+const ToastContext = createContext(null)
+
+export function ToastProvider({ children }) {
+  const [toasts, setToasts] = useState([])
+  const timers = useRef(new Map())
+
+  const dismiss = useCallback((id) => {
+    setToasts((current) => current.filter((toast) => toast.id !== id))
+    const timer = timers.current.get(id)
+    if (timer) {
+      clearTimeout(timer)
+      timers.current.delete(id)
+    }
+  }, [])
+
+  const push = useCallback((toast) => {
+    const id = toast.id || `toast-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+    const duration = toast.duration ?? 3200
+    setToasts((current) => [...current, { id, tone: 'neutral', ...toast }])
+    if (duration > 0) {
+      const timer = setTimeout(() => dismiss(id), duration)
+      timers.current.set(id, timer)
+    }
+    return id
+  }, [dismiss])
+
+  useEffect(() => () => {
+    timers.current.forEach((t) => clearTimeout(t))
+    timers.current.clear()
+  }, [])
+
+  const value = React.useMemo(() => ({
+    push,
+    dismiss,
+    success: (message, opts) => push({ tone: 'success', message, ...opts }),
+    error: (message, opts) => push({ tone: 'danger', message, ...opts }),
+    info: (message, opts) => push({ tone: 'neutral', message, ...opts })
+  }), [push, dismiss])
+
+  return (
+    <ToastContext.Provider value={value}>
+      {children}
+      <div className="toast-stack" aria-live="polite" aria-atomic="true">
+        <AnimatePresence initial={false}>
+          {toasts.map((toast) => (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              transition={{ duration: 0.18 }}
+              className={cn('toast', `toast-${toast.tone}`)}
+              role="status"
+            >
+              <div className="flex-1">
+                {toast.title ? <p className="text-sm font-semibold text-content">{toast.title}</p> : null}
+                <p className="text-sm text-content-muted">{toast.message}</p>
+              </div>
+              <button
+                onClick={() => dismiss(toast.id)}
+                className="icon-btn icon-btn-ghost shrink-0"
+                aria-label="Dismiss notification"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+    </ToastContext.Provider>
+  )
+}
+
+export function useToast() {
+  const ctx = useContext(ToastContext)
+  if (!ctx) {
+    // Graceful fallback so unit snippets don't crash if provider is missing.
+    return {
+      push: () => undefined,
+      dismiss: () => undefined,
+      success: () => undefined,
+      error: () => undefined,
+      info: () => undefined
+    }
+  }
+  return ctx
 }

@@ -309,7 +309,21 @@ body {
 
 .icon-btn-ghost { background: transparent; }
 .icon-btn-subtle { background: var(--surface-elevated); }
+.icon-btn-danger {
+  color: #fecaca;
+  background: rgba(248, 113, 113, 0.08);
+  border-color: rgba(248, 113, 113, 0.32);
+}
+.icon-btn-danger:hover { color: #fff; border-color: rgba(248, 113, 113, 0.55); background: rgba(248, 113, 113, 0.18); }
 .icon-btn:hover { color: #fff; border-color: #3b4a66; }
+.icon-btn:focus-visible,
+.btn:focus-visible,
+.input-base:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(124, 143, 248, 0.35);
+  border-color: rgba(124, 143, 248, 0.8);
+}
+.icon-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .input-base {
   width: 100%;
@@ -358,12 +372,28 @@ body {
 /* React Flow */
 .react-flow__node { cursor: pointer; }
 .react-flow__edge-path { stroke: #5f74dd; stroke-width: 1.8; }
-.react-flow__edge.selected .react-flow__edge-path { stroke: #96a7ff; }
+.react-flow__edge.selected .react-flow__edge-path { stroke: #96a7ff; stroke-width: 2.4; }
 .react-flow__handle {
-  width: 10px;
-  height: 10px;
-  background: #7085f7;
-  border: 2px solid #101827;
+  width: 12px;
+  height: 12px;
+  background: #7c8ff8;
+  border: 2px solid #0f1727;
+  box-shadow: 0 0 0 1px rgba(124, 143, 248, 0.45);
+  transition: transform 0.14s ease, background 0.14s ease, box-shadow 0.14s ease;
+}
+.react-flow__handle:hover,
+.react-flow__node:hover .react-flow__handle {
+  background: #a8b6ff;
+  transform: scale(1.18);
+  box-shadow: 0 0 0 3px rgba(124, 143, 248, 0.35);
+}
+.react-flow__handle-connecting {
+  background: #6fe7b9 !important;
+  box-shadow: 0 0 0 4px rgba(62, 207, 159, 0.35) !important;
+}
+.react-flow__handle-valid {
+  background: #6fe7b9 !important;
+  box-shadow: 0 0 0 4px rgba(62, 207, 159, 0.45) !important;
 }
 .react-flow__controls,
 .react-flow__minimap {
@@ -381,3 +411,254 @@ body {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinner { animation: spin 1s linear infinite; }
+
+/* ---------- Tooltip ----------
+   Lightweight CSS tooltip. Hidden on coarse pointers (touch) to avoid
+   sticky/awkward activation on mobile; aria-labels still make icon-only
+   buttons accessible on every device. */
+.tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip-bubble {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -4px) scale(0.96);
+  pointer-events: none;
+  white-space: nowrap;
+  padding: 0.32rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #e6edf8;
+  background: #0f1727;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+  z-index: 40;
+}
+
+.tooltip-top .tooltip-bubble { bottom: calc(100% + 6px); }
+.tooltip-bottom .tooltip-bubble { top: calc(100% + 6px); transform: translate(-50%, 4px) scale(0.96); }
+
+.tooltip-wrapper:hover .tooltip-bubble,
+.tooltip-wrapper:focus-within .tooltip-bubble {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+@media (hover: none) {
+  .tooltip-bubble { display: none; }
+}
+
+/* ---------- Toast stack ---------- */
+.toast-stack {
+  position: fixed;
+  z-index: 60;
+  right: calc(1rem + var(--sar));
+  bottom: calc(1rem + var(--sab));
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: min(92vw, 22rem);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.95rem;
+  border: 1px solid var(--border-subtle);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 50%), var(--surface);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+}
+
+.toast-success { border-color: rgba(62, 207, 159, 0.35); }
+.toast-success::before {
+  content: '';
+  width: 3px;
+  border-radius: 999px;
+  background: var(--success);
+}
+.toast-danger { border-color: rgba(248, 113, 113, 0.35); }
+.toast-danger::before {
+  content: '';
+  width: 3px;
+  border-radius: 999px;
+  background: var(--danger);
+}
+.toast-neutral::before {
+  content: '';
+  width: 3px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+/* ---------- Modal size variants ---------- */
+.modal-sheet-sm { max-width: 28rem; }
+.modal-sheet-md { max-width: 36rem; }
+.modal-sheet-lg { max-width: 48rem; }
+
+/* ---------- Roadmap tree ---------- */
+.tree-node__row {
+  position: relative;
+}
+
+.tree-node__card {
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.85rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.015) 0%, transparent 60%), var(--surface);
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.tree-node__card:hover {
+  border-color: #3b4a66;
+}
+
+.tree-node__card--section {
+  border-color: rgba(124, 143, 248, 0.35);
+}
+
+.tree-node__card--editing {
+  border-color: rgba(124, 143, 248, 0.8);
+  box-shadow: 0 0 0 3px rgba(124, 143, 248, 0.18);
+}
+
+.tree-node__title {
+  color: var(--content);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.tree-node__title--section {
+  font-weight: 600;
+}
+
+/* Show action buttons permanently on touch devices where hover is
+   unreliable, keep the hover-only reveal on desktop. */
+.tree-node__actions {
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+
+.group:hover > .tree-node__row .tree-node__actions,
+.group:focus-within > .tree-node__row .tree-node__actions,
+.tree-node__row:hover .tree-node__actions,
+.tree-node__row:focus-within .tree-node__actions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .tree-node__actions { opacity: 1; }
+}
+
+/* ---------- Project card ---------- */
+.project-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+  padding: 1.1rem 1.15rem 1.15rem;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.project-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(124, 143, 248, 0.55);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.35);
+}
+
+.project-card__open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #a8b6ff;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.project-card:hover .project-card__open,
+.project-card:focus-visible .project-card__open {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (hover: none) {
+  .project-card__open { opacity: 1; transform: none; }
+}
+
+/* Keep secondary actions always visible on touch devices. */
+.project-card__actions {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .project-card__actions {
+    opacity: 0;
+    transition: opacity 0.16s ease;
+  }
+  .project-card:hover .project-card__actions,
+  .project-card:focus-within .project-card__actions {
+    opacity: 1;
+  }
+}
+
+/* ---------- Node panel ---------- */
+.node-panel__label {
+  display: block;
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--content-muted);
+}
+
+.node-panel__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.7rem;
+  background: var(--surface);
+}
+
+.node-panel__item:hover { border-color: #3b4a66; }
+
+/* ---------- Custom flow node ---------- */
+.flow-node {
+  position: relative;
+  min-width: 200px;
+  max-width: 280px;
+  border-radius: 1.05rem;
+  border: 1px solid #2a3954;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.015) 0%, transparent 60%), #131c2b;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.flow-node:hover {
+  border-color: rgba(124, 143, 248, 0.55);
+}
+
+.flow-node--selected {
+  border-color: rgba(151, 165, 255, 0.9);
+  box-shadow: 0 0 0 2px rgba(124, 143, 248, 0.35), 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+.flow-node__items-divider {
+  border-top: 1px solid #2a3954;
+}
+
