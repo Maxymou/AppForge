@@ -27,6 +27,7 @@ async function seedAdmin(prisma) {
       data: {
         email,
         password: hashedPassword,
+        username: "Admin",
       },
     });
 

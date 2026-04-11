@@ -326,3 +326,17 @@ AppForge/
 - `POST /api/projects/:id/duplicate` — clone project
 - `POST /api/projects/:id/import` — import markdown
 - `GET /api/projects/:id/export` — export markdown
+
+
+## Mise à jour UX mobile + français (avril 2026)
+
+- Interface utilisateur traduite en français (auth, roadmap, projets, flow, actions principales).
+- Header mobile dédié avec gestion de safe-area iPhone (`safe-top`) sur Roadmap, Projets et éditeur Flow.
+- Barre de navigation mobile compacte en capsule flottante avec entrée **Liens** (le logout est déplacé dans **Paramètres**).
+- Nouvelle vue **Liens** pour stocker des liens utiles (titre, URL, note) côté client.
+- Paramètres utilisateur: modification du nom, email, mot de passe, déconnexion.
+- Projets: ajout des champs `status` (`idee`, `en_cours`, `deploye`, `termine`) et `comment`.
+- Roadmap: édition enrichie des items (titre, commentaire, code).
+- Flow: mini-carte masquée sur mobile et handles de sortie par item de nœud (`sourceHandle`) pour des connexions fines.
+
+> Après mise à jour, exécutez les migrations Prisma au déploiement (`docker compose up -d --build` les applique via le démarrage backend).

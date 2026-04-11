@@ -14,17 +14,17 @@ const useProjectStore = create((set, get) => ({
       const response = await client.get('/projects')
       set({ projects: response.data, loading: false })
     } catch (err) {
-      set({ error: err.response?.data?.error || 'Failed to fetch projects', loading: false })
+      set({ error: err.response?.data?.error || 'Échec du chargement des projets', loading: false })
     }
   },
 
-  createProject: async (name, description = '') => {
+  createProject: async (name, description = '', status = 'idee', comment = '') => {
     try {
-      const response = await client.post('/projects', { name, description })
+      const response = await client.post('/projects', { name, description, status, comment })
       await get().fetchProjects()
       return response.data
     } catch (err) {
-      set({ error: err.response?.data?.error || 'Failed to create project' })
+      set({ error: err.response?.data?.error || 'Échec de création du projet' })
       return null
     }
   },
@@ -36,7 +36,7 @@ const useProjectStore = create((set, get) => ({
       set({ currentProject: response.data, loading: false })
       return response.data
     } catch (err) {
-      set({ error: err.response?.data?.error || 'Failed to fetch project', loading: false })
+      set({ error: err.response?.data?.error || 'Échec du chargement du projet', loading: false })
       return null
     }
   },
@@ -48,7 +48,7 @@ const useProjectStore = create((set, get) => ({
       await get().fetchProjects()
       return response.data
     } catch (err) {
-      set({ error: err.response?.data?.error || 'Failed to update project' })
+      set({ error: err.response?.data?.error || 'Échec de mise à jour du projet' })
       return null
     }
   },
@@ -59,7 +59,7 @@ const useProjectStore = create((set, get) => ({
       await get().fetchProjects()
       return true
     } catch (err) {
-      set({ error: err.response?.data?.error || 'Failed to delete project' })
+      set({ error: err.response?.data?.error || 'Échec de suppression du projet' })
       return false
     }
   },
@@ -69,7 +69,7 @@ const useProjectStore = create((set, get) => ({
       await client.post(`/projects/${id}/save`, { nodes, edges })
       return true
     } catch (err) {
-      set({ error: err.response?.data?.error || 'Failed to save project' })
+      set({ error: err.response?.data?.error || 'Échec de sauvegarde du projet' })
       return false
     }
   },
@@ -80,7 +80,7 @@ const useProjectStore = create((set, get) => ({
       await get().fetchProjects()
       return response.data
     } catch (err) {
-      set({ error: err.response?.data?.error || 'Failed to duplicate project' })
+      set({ error: err.response?.data?.error || 'Échec de duplication du projet' })
       return null
     }
   },
@@ -92,7 +92,7 @@ const useProjectStore = create((set, get) => ({
       set({ currentProject: response.data, loading: false })
       return response.data
     } catch (err) {
-      set({ error: err.response?.data?.error || 'Failed to import project', loading: false })
+      set({ error: err.response?.data?.error || "Échec de l'import du projet", loading: false })
       return null
     }
   },
@@ -118,7 +118,7 @@ const useProjectStore = create((set, get) => ({
       window.URL.revokeObjectURL(url)
       return true
     } catch (err) {
-      set({ error: err.response?.data?.error || 'Failed to export project' })
+      set({ error: err.response?.data?.error || "Échec de l'export du projet" })
       return false
     }
   },
@@ -129,7 +129,7 @@ const useProjectStore = create((set, get) => ({
       set({ versions: response.data })
       return response.data
     } catch (err) {
-      set({ error: err.response?.data?.error || 'Failed to fetch versions' })
+      set({ error: err.response?.data?.error || "Échec du chargement de l'historique" })
       return []
     }
   },
@@ -141,7 +141,7 @@ const useProjectStore = create((set, get) => ({
       set({ currentProject: response.data, loading: false })
       return response.data
     } catch (err) {
-      set({ error: err.response?.data?.error || 'Failed to rollback', loading: false })
+      set({ error: err.response?.data?.error || 'Échec de restauration', loading: false })
       return null
     }
   },
