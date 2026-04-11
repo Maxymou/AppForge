@@ -22,6 +22,7 @@ export default function TreeNode({ node, depth = 0 }) {
   useEffect(() => { setComment(node.comment || ''); setCode(node.code || '') }, [node])
 
   const hasChildren = node.children && node.children.length > 0
+  const hasDetails = Boolean((node.comment || '').trim() || (node.code || '').trim())
   const levelLabel = depth === 0 ? 'Section' : depth === 1 ? 'Item' : 'Sous-item'
   const leftPad = Math.min(depth * 10, 24)
 
@@ -38,6 +39,8 @@ export default function TreeNode({ node, depth = 0 }) {
             <div className="min-w-0 flex-1">
               <div className="mb-1 flex items-center gap-2"><Badge tone={depth === 0 ? 'success' : 'neutral'}>{levelLabel}</Badge></div>
               {isEditing ? <Input ref={editInputRef} value={editValue} onChange={(e) => setEditValue(e.target.value)} onBlur={async()=>{if(editValue.trim()) await updateNode(node.id,{title:editValue.trim()}); setIsEditing(false)}} className="py-1" /> : <button type="button" onDoubleClick={() => setIsEditing(true)} onClick={() => setShowEditor(true)} className={`tree-node__title ${depth === 0 ? 'tree-node__title--section' : ''} block w-full text-left text-sm text-slate-200`}>{node.title}</button>}
+              {!isEditing && hasDetails ? <p className="mt-1 line-clamp-2 text-xs text-content-muted">{node.comment?.trim() || 'Bloc code ajouté'}</p> : null}
+              {!isEditing && hasDetails ? <div className="mt-1 flex items-center gap-2 text-[11px]"><Badge tone="warning">{node.comment?.trim() ? 'Commentaire' : 'Sans commentaire'}</Badge>{node.code?.trim() ? <Badge tone="neutral">Code</Badge> : null}</div> : null}
             </div>
           </div>
 

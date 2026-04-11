@@ -27,6 +27,10 @@ export default function SettingsModal({ open, onClose }) {
   }
 
   const savePassword = async () => {
+    if (newPassword.length < 8) {
+      toast.error('Le nouveau mot de passe doit contenir au moins 8 caractères')
+      return
+    }
     const ok = await changePassword(currentPassword, newPassword)
     if (ok) { toast.success('Mot de passe modifié'); setCurrentPassword(''); setNewPassword('') }
     else toast.error('Échec de la mise à jour du mot de passe')

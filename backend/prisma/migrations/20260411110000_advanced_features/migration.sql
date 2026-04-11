@@ -1,0 +1,23 @@
+ALTER TABLE "ProjectEdge" ADD COLUMN IF NOT EXISTS "targetHandle" TEXT;
+
+CREATE TABLE IF NOT EXISTS "Link" (
+  "id" TEXT NOT NULL,
+  "userId" TEXT NOT NULL,
+  "title" TEXT NOT NULL,
+  "url" TEXT NOT NULL,
+  "note" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "Link_pkey" PRIMARY KEY ("id")
+);
+
+CREATE INDEX IF NOT EXISTS "Link_userId_idx" ON "Link"("userId");
+
+DO $$ BEGIN
+  ALTER TABLE "Link"
+  ADD CONSTRAINT "Link_userId_fkey"
+  FOREIGN KEY ("userId") REFERENCES "User"("id")
+  ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;

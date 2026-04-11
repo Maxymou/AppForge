@@ -5,6 +5,7 @@ const { PrismaClient } = require('@prisma/client');
 const authRoutes = require('./routes/auth');
 const roadmapRoutes = require('./routes/roadmap');
 const projectRoutes = require('./routes/projects');
+const linksRoutes = require('./routes/links');
 const { seedAdmin } = require('./utils/seedAdmin');
 
 const prisma = new PrismaClient();
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/roadmap', roadmapRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/links', linksRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

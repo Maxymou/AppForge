@@ -11,7 +11,7 @@ const statusLabel = { idee: 'Idée', en_cours: 'En cours', deploye: 'Déployé',
 const statusTone = { idee: 'neutral', en_cours: 'warning', deploye: 'success', termine: 'neutral' }
 
 export default function ProjectList() {
-  const { projects, loading, error, fetchProjects, createProject, deleteProject, duplicateProject } = useProjectStore()
+  const { projects, loading, error, fetchProjects, createProject, updateProject, deleteProject, duplicateProject } = useProjectStore()
   const navigate = useNavigate()
   const toast = useToast()
   const [showCreate, setShowCreate] = useState(false)
@@ -22,6 +22,7 @@ export default function ProjectList() {
   const [newComment, setNewComment] = useState('')
   const [creating, setCreating] = useState(false)
   const [projectToDelete, setProjectToDelete] = useState(null)
+  const [editingProject, setEditingProject] = useState(null)
 
   useEffect(() => { fetchProjects() }, [])
   const trimmedName = newName.trim()
@@ -34,6 +35,32 @@ export default function ProjectList() {
     const project = await createProject(trimmedName, newDescription.trim(), newStatus, newComment.trim())
     setCreating(false)
     if (project) { toast.success(`Projet « ${project.name} » créé`); setShowCreate(false); navigate(`/projects/${project.id}`) }
+  }
+  const openEdit = (project) => {
+    setEditingProject(project)
+    setNewName(project.name || '')
+    setNewDescription(project.description || '')
+    setNewStatus(project.status || 'idee')
+    setNewComment(project.comment || '')
+    setShowCreate(true)
+  }
+  const handleSaveProject = async (e) => {
+    if (editingProject) {
+      e?.preventDefault?.()
+      const updated = await updateProject(editingProject.id, {
+        name: newName.trim(),
+        description: newDescription.trim() || null,
+        status: newStatus,
+        comment: newComment.trim() || null
+      })
+      if (updated) {
+        toast.success('Projet mis à jour')
+        setShowCreate(false)
+        setEditingProject(null)
+      }
+      return
+    }
+    return handleCreate(e)
   }
 
   return (
@@ -59,7 +86,7 @@ export default function ProjectList() {
                   <p className="line-clamp-2 text-xs text-content-muted">{project.description || 'Aucune description.'}</p>
                   <p className="mt-2 line-clamp-2 min-h-[32px] text-xs text-slate-300">💬 {project.comment || 'Espace commentaire prévu pour vos notes produit.'}</p>
                   <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-content-muted"><span>{project._count?.nodes || 0} nœuds</span><span>•</span><span>{project._count?.edges || 0} liens</span><span>•</span><span>MAJ {new Date(project.updatedAt).toLocaleDateString('fr-FR')}</span></div>
-                  <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><Button size="sm" className="w-full sm:w-auto" onClick={() => navigate(`/projects/${project.id}`)}>Ouvrir le projet</Button><div className="project-card__actions flex w-full gap-2 sm:w-auto"><Button size="sm" className="flex-1 sm:flex-none" variant="secondary" onClick={() => duplicateProject(project.id)}>Dupliquer</Button><Button size="sm" className="flex-1 sm:flex-none" variant="danger" onClick={() => setProjectToDelete(project)}>Supprimer</Button></div></div>
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><Button size="sm" className="w-full sm:w-auto" onClick={() => navigate(`/projects/${project.id}`)}>Ouvrir le projet</Button><div className="project-card__actions flex w-full gap-2 sm:w-auto"><Button size="sm" className="flex-1 sm:flex-none" variant="secondary" onClick={() => openEdit(project)}>Éditer</Button><Button size="sm" className="flex-1 sm:flex-none" variant="secondary" onClick={() => duplicateProject(project.id)}>Dupliquer</Button><Button size="sm" className="flex-1 sm:flex-none" variant="danger" onClick={() => setProjectToDelete(project)}>Supprimer</Button></div></div>
                 </article>
               </motion.div>
             ))}
@@ -67,13 +94,13 @@ export default function ProjectList() {
         )}
       </div>
 
-      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Créer un projet">
-        <form onSubmit={handleCreate} className="space-y-3">
+      <Modal open={showCreate} onClose={() => { setShowCreate(false); setEditingProject(null) }} title={editingProject ? 'Éditer le projet' : 'Créer un projet'}>
+        <form onSubmit={handleSaveProject} className="space-y-3">
           <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nom du projet" autoFocus />
           <Textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={3} placeholder="Description" />
           <select className="input-base" value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>{statuses.map((s)=><option key={s} value={s}>{statusLabel[s]}</option>)}</select>
           <Textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} rows={2} placeholder="Commentaire" />
-          <Button type="submit" disabled={!canCreate} className="w-full">{creating ? 'Création...' : 'Créer le projet'}</Button>
+          <Button type="submit" disabled={editingProject ? !trimmedName : !canCreate} className="w-full">{editingProject ? 'Enregistrer les modifications' : creating ? 'Création...' : 'Créer le projet'}</Button>
         </form>
       </Modal>
 
