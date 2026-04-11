@@ -45,7 +45,7 @@ function ProtectedLayout({ children }) {
         <Sidebar />
       </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden md:py-3 md:pr-3">
+      <main className="safe-x flex min-w-0 flex-1 flex-col overflow-hidden md:px-0 md:py-3 md:pr-3">
         <div className="surface-card flex min-h-0 flex-1 overflow-hidden rounded-none border-x-0 border-t-0 md:rounded-2xl md:border">
           {children}
         </div>

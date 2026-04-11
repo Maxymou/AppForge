@@ -38,15 +38,20 @@ export default function ProjectList() {
 
   return (
     <div className="flex h-full min-w-0 flex-col bg-secondary">
-      <MobileHeader title="Projets" actions={[{ key: 'new', label: 'Nouveau', onClick: () => setShowCreate(true) }]} menuActions={[{ key: 'settings', label: 'Paramètres', onClick: () => setShowSettings(true) }]} />
+      <MobileHeader
+        title="Projets"
+        subtitle={projects.length ? `${projects.length} projet(s)` : 'Créez et organisez vos flows visuels'}
+        primaryAction={{ key: 'new', label: 'Nouveau', onClick: () => setShowCreate(true) }}
+        menuActions={[{ key: 'settings', label: 'Paramètres', onClick: () => setShowSettings(true) }]}
+      />
       <div className="hidden border-b border-border-subtle px-5 py-4 md:block md:px-7">
         <SectionHeader title="Projets" subtitle={projects.length ? `${projects.length} projet(s)` : 'Créez et organisez vos flows visuels'} actions={<Button onClick={() => setShowCreate(true)}>Nouveau projet</Button>} />
       </div>
       {error ? <div className="mx-4 mt-3 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-2 text-sm text-red-200">{error}</div> : null}
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 md:px-7">
+      <div className="app-scroll px-3 py-3 sm:px-4 md:px-7 md:py-4">
         {loading ? <div className="flex h-48 items-center justify-center"><svg className="spinner h-8 w-8 text-indigo-300" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z" /></svg></div> : !projects.length ? <EmptyState title="Aucun projet" description="Créez votre premier projet." action={<Button onClick={() => setShowCreate(true)}>Créer un projet</Button>} /> : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {projects.map((project, i) => (
               <motion.div key={project.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
                 <article className="project-card surface-card">
@@ -54,7 +59,7 @@ export default function ProjectList() {
                   <p className="line-clamp-2 text-xs text-content-muted">{project.description || 'Aucune description.'}</p>
                   <p className="mt-2 line-clamp-2 min-h-[32px] text-xs text-slate-300">💬 {project.comment || 'Espace commentaire prévu pour vos notes produit.'}</p>
                   <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-content-muted"><span>{project._count?.nodes || 0} nœuds</span><span>•</span><span>{project._count?.edges || 0} liens</span><span>•</span><span>MAJ {new Date(project.updatedAt).toLocaleDateString('fr-FR')}</span></div>
-                  <div className="mt-4 flex items-center justify-between"><Button size="sm" onClick={() => navigate(`/projects/${project.id}`)}>Ouvrir le projet</Button><div className="project-card__actions flex gap-2"><Button size="sm" variant="secondary" onClick={() => duplicateProject(project.id)}>Dupliquer</Button><Button size="sm" variant="danger" onClick={() => setProjectToDelete(project)}>Supprimer</Button></div></div>
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><Button size="sm" className="w-full sm:w-auto" onClick={() => navigate(`/projects/${project.id}`)}>Ouvrir le projet</Button><div className="project-card__actions flex w-full gap-2 sm:w-auto"><Button size="sm" className="flex-1 sm:flex-none" variant="secondary" onClick={() => duplicateProject(project.id)}>Dupliquer</Button><Button size="sm" className="flex-1 sm:flex-none" variant="danger" onClick={() => setProjectToDelete(project)}>Supprimer</Button></div></div>
                 </article>
               </motion.div>
             ))}
