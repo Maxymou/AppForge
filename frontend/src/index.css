@@ -202,6 +202,16 @@ body {
   }
 }
 
+
+
+.mobile-page-shell {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 /* ---------- Design tokens as utility-like classes ---------- */
 .bg-main { background-color: var(--bg-main); }
 .bg-secondary { background-color: var(--bg-secondary); }
@@ -562,9 +572,10 @@ body {
 .project-card {
   position: relative;
   display: flex;
+  min-width: 0;
   flex-direction: column;
-  min-height: 180px;
-  padding: 1.1rem 1.15rem 1.15rem;
+  min-height: 164px;
+  padding: 0.95rem 0.95rem 1rem;
   cursor: pointer;
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
@@ -640,8 +651,8 @@ body {
 /* ---------- Custom flow node ---------- */
 .flow-node {
   position: relative;
-  min-width: 200px;
-  max-width: 280px;
+  min-width: 172px;
+  max-width: 250px;
   border-radius: 1.05rem;
   border: 1px solid #2a3954;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.015) 0%, transparent 60%), #131c2b;
@@ -662,3 +673,16 @@ body {
   border-top: 1px solid #2a3954;
 }
 
+
+
+@media (max-width: 767px) {
+  .react-flow__attribution { display: none; }
+  .react-flow__controls { bottom: 12px; right: 10px; }
+  .tree-node__card { border-radius: 0.8rem; }
+  .toast-stack {
+    left: calc(0.75rem + var(--sal));
+    right: calc(0.75rem + var(--sar));
+    bottom: calc(0.8rem + var(--sab));
+    max-width: none;
+  }
+}

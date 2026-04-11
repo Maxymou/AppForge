@@ -11,7 +11,10 @@ import SettingsModal from '../layout/SettingsModal'
 
 const NODE_TYPES = { custom: CustomNode }
 const DEFAULT_EDGE_OPTIONS = { type: 'smoothstep', style: { stroke: '#5f74dd', strokeWidth: 2 } }
-const mapProjectToFlow = (project) => ({ rfNodes: (project.nodes || []).map((n) => ({ id: n.nodeId, type: 'custom', position: { x: n.posX, y: n.posY }, data: { title: n.title, label: n.title, description: n.description || '', notes: n.notes || '', items: n.items || [] } })), rfEdges: (project.edges || []).map((e) => ({ id: e.edgeId, source: e.source, target: e.target, sourceHandle: e.sourceHandle || null, ...DEFAULT_EDGE_OPTIONS })) })
+const mapProjectToFlow = (project) => ({
+  rfNodes: (project.nodes || []).map((n) => ({ id: n.nodeId, type: 'custom', position: { x: n.posX, y: n.posY }, data: { title: n.title, label: n.title, description: n.description || '', notes: n.notes || '', items: n.items || [] } })),
+  rfEdges: (project.edges || []).map((e) => ({ id: e.edgeId, source: e.source, target: e.target, sourceHandle: e.sourceHandle || null, ...DEFAULT_EDGE_OPTIONS }))
+})
 
 export default function FlowCanvas() {
   const { id } = useParams(); const navigate = useNavigate(); const toast = useToast()
@@ -28,9 +31,17 @@ export default function FlowCanvas() {
   const [importText, setImportText] = useState('')
   const [importAcknowledged, setImportAcknowledged] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 768 : false))
   const isReadOnly = currentProject?.readOnly || false
-  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false
   const nodesRef = useRef(nodes); const edgesRef = useRef(edges)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const onResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
   useEffect(()=>{nodesRef.current=nodes},[nodes]); useEffect(()=>{edgesRef.current=edges},[edges])
   useEffect(() => { (async()=>{setLoading(true); const p=await fetchProject(id); if(!p){navigate('/projects');return}; const {rfNodes,rfEdges}=mapProjectToFlow(p); setNodes(rfNodes); setEdges(rfEdges); setLoading(false) })() }, [id])
 
@@ -44,19 +55,27 @@ export default function FlowCanvas() {
   if (loading) return <div className="flex h-full items-center justify-center bg-secondary">Chargement...</div>
 
   return (
-    <div className="flex h-full bg-secondary">
+    <div className="flex h-full min-w-0 bg-secondary">
       <div className="flex min-w-0 flex-1 flex-col">
-        <MobileHeader title={currentProject?.name || 'Projet'} actions={[{ key: 'add', label: 'Ajouter', onClick: handleAddNode }, { key: 'save', label: 'Enregistrer', onClick: handleManualSave, variant: 'secondary' }]} menuActions={[{ key: 'import', label: 'Importer', onClick: () => setShowImport(true) }, { key: 'export', label: 'Exporter', onClick: handleExport }, { key: 'versions', label: 'Historique', onClick: async()=>{await fetchVersions(id); setShowVersions(true)} }, { key: 'settings', label: 'Paramètres', onClick: () => setShowSettings(true) }]} />
+        <MobileHeader
+          title={currentProject?.name || 'Projet'}
+          subtitle={isReadOnly ? 'Mode lecture seule' : `${nodes.length} nœud(s) • ${edges.length} lien(s)`}
+          backAction={{ label: 'Projets', onClick: () => navigate('/projects') }}
+          secondaryActions={[{ key: 'save', label: 'Enregistrer', onClick: handleManualSave, variant: 'secondary' }]}
+          primaryAction={{ key: 'add', label: 'Ajouter', onClick: handleAddNode }}
+          menuActions={[{ key: 'import', label: 'Importer', onClick: () => setShowImport(true) }, { key: 'export', label: 'Exporter', onClick: handleExport }, { key: 'versions', label: 'Historique', onClick: async()=>{await fetchVersions(id); setShowVersions(true)} }, { key: 'settings', label: 'Paramètres', onClick: () => setShowSettings(true) }]}
+        />
+
         <div className="hidden items-center justify-between gap-3 border-b border-border-subtle px-4 py-3 md:flex md:px-5">
           <div className="flex items-center gap-3"><button onClick={() => navigate('/projects')} className="icon-btn icon-btn-ghost">←</button><h2 className="text-sm font-semibold text-content md:text-base">{currentProject?.name}</h2>{isReadOnly ? <Badge tone="warning">Lecture seule</Badge> : null}</div>
           <div className="flex items-center gap-2"><Button size="sm" onClick={handleAddNode}>Ajouter un nœud</Button><Button size="sm" variant="secondary" onClick={handleManualSave}>Enregistrer</Button><ActionMenu label="Actions" items={[{ key: 'import', label: 'Importer', onClick: () => setShowImport(true) }, { key: 'export', label: 'Exporter', onClick: handleExport }, { key: 'history', label: 'Historique', onClick: async()=>{await fetchVersions(id); setShowVersions(true)} }, { key: 'settings', label: 'Paramètres', onClick: () => setShowSettings(true) }]} /></div>
         </div>
 
         {error ? <div className="mx-4 mt-2 rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">{error}</div> : null}
-        <div className="relative flex-1">
+        <div className="relative min-h-0 flex-1">
           <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={handleConnect} onNodeClick={(_, node) => setSelectedNodeId(node.id)} onPaneClick={() => setSelectedNodeId(null)} nodeTypes={NODE_TYPES} defaultEdgeOptions={DEFAULT_EDGE_OPTIONS} fitView nodesDraggable={!isReadOnly} nodesConnectable={!isReadOnly} deleteKeyCode={null} style={{ background: '#0b111d' }}>
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#1f2c41" />
-            <Controls />
+            {!isMobile ? <Controls /> : null}
             {!isMobile ? <MiniMap nodeColor="#6f82ef" maskColor="rgba(11,17,29,0.76)" /> : null}
           </ReactFlow>
         </div>

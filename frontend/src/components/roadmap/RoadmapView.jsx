@@ -34,7 +34,16 @@ export default function RoadmapView() {
 
   return (
     <div className="flex h-full flex-col bg-secondary">
-      <MobileHeader title="Roadmap" actions={[{ key: 'add', label: 'Ajouter', onClick: () => setIsAddingRoot(true) }]} menuActions={[{ key: 'import', label: 'Importer', onClick: () => setShowImport(true) }, { key: 'export', label: 'Exporter', onClick: handleExport }, { key: 'settings', label: 'Paramètres', onClick: () => setShowSettings(true) }]} />
+      <MobileHeader
+        title="Roadmap"
+        subtitle={nodes.length ? `${nodes.length} sections • ${totalItems} éléments` : 'Structurez votre plan produit'}
+        primaryAction={{ key: 'add', label: 'Ajouter', onClick: () => setIsAddingRoot(true) }}
+        menuActions={[
+          { key: 'import', label: 'Importer', onClick: () => setShowImport(true) },
+          { key: 'export', label: 'Exporter', onClick: handleExport },
+          { key: 'settings', label: 'Paramètres', onClick: () => setShowSettings(true) }
+        ]}
+      />
 
       <div className="hidden border-b border-border-subtle px-5 py-4 md:block md:px-7">
         <SectionHeader
@@ -49,11 +58,11 @@ export default function RoadmapView() {
 
       {error ? <div className="mx-5 mt-4 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-2 text-sm text-red-200 md:mx-7">{error}</div> : null}
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 md:px-7">
+      <div className="app-scroll px-3 py-3 sm:px-4 md:px-7 md:py-4">
         {loading ? <div className="flex h-48 items-center justify-center"><svg className="spinner h-8 w-8 text-indigo-300" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z" /></svg></div> : nodes.length === 0 && !isAddingRoot ? (
           <EmptyState title="Aucune roadmap" description="Créez votre première section ou importez un markdown." action={<Button onClick={() => setIsAddingRoot(true)}>Créer la première section</Button>} />
         ) : (
-          <div className="max-w-4xl space-y-2">
+          <div className="mx-auto w-full max-w-4xl space-y-2.5">
             {nodes.map((node) => <TreeNode key={node.id} node={node} depth={0} />)}
             {isAddingRoot && <div className="surface-card p-3"><Input ref={rootInputRef} value={newRootTitle} onChange={(e) => setNewRootTitle(e.target.value)} onBlur={handleAddRoot} placeholder="Titre de section..." /></div>}
           </div>

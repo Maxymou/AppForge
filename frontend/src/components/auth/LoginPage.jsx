@@ -21,19 +21,19 @@ export default function LoginPage() {
     // .app-viewport anchors the login shell to the stable --app-height so
     // the card never jumps when the iOS keyboard opens on focus.
     // .safe-x / safe-top / safe-bottom paint the notch + home indicator.
-    <div className="app-viewport safe-top safe-bottom safe-x relative items-center justify-center overflow-hidden bg-main px-5 py-4 sm:p-6">
+    <div className="app-viewport safe-top safe-bottom safe-x relative items-center justify-center overflow-hidden bg-main px-4 py-6 sm:px-6 sm:py-8">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(124,143,248,0.17),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(62,207,159,0.08),transparent_35%)]" />
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-md"
+        className="relative z-10 w-full max-w-md py-2 sm:py-0"
       >
-        <div className="mb-7 flex justify-center">
+        <div className="mb-8 flex justify-center">
           <AppForgeBrand />
         </div>
 
-        <Card className="p-7 md:p-8">
+        <Card className="border-white/10 bg-surface/95 p-6 shadow-[0_26px_52px_rgba(0,0,0,0.38)] md:p-8">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-content">Bon retour</h1>
             <p className="mt-1 text-sm text-content-muted">Connectez-vous pour accéder à votre espace de travail.</p>

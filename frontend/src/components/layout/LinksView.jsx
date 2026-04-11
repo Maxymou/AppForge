@@ -48,7 +48,7 @@ export default function LinksView() {
 
   return (
     <div className="flex h-full flex-col bg-secondary">
-      <MobileHeader title="Liens" actions={[{ key: 'add', label: 'Ajouter', onClick: openCreate }]} />
+      <MobileHeader title="Liens" subtitle={`${total} ${total > 1 ? 'liens' : 'lien'}`} primaryAction={{ key: 'add', label: 'Ajouter', onClick: openCreate }} />
       <div className="hidden border-b border-border-subtle px-5 py-4 md:block">
         <div className="flex items-center justify-between">
           <div>
@@ -58,7 +58,7 @@ export default function LinksView() {
           <Button onClick={openCreate}>Ajouter un lien</Button>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-4 py-4 md:px-7">
+      <div className="app-scroll px-4 py-4 md:px-7">
         {!links.length ? (
           <EmptyState title="Aucun lien" description="Ajoutez vos ressources web pour les retrouver rapidement." action={<Button onClick={openCreate}>Ajouter un lien</Button>} />
         ) : (
