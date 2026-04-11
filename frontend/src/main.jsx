@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import './index.css'
 import { initViewport } from './lib/viewport'
+import { ToastProvider } from './components/ui/primitives'
 
 // Initialize the iOS-robust viewport sizing BEFORE React renders so that
 // --app-height / --vvh / safe area vars are already set on <html> when the
@@ -27,7 +28,9 @@ if ('serviceWorker' in navigator) {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <ToastProvider>
+        <App />
+      </ToastProvider>
     </BrowserRouter>
   </React.StrictMode>
 )

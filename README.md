@@ -47,13 +47,38 @@ All the details (how it was wired, how the iOS `--app-height` strategy works,
 how to write new fullscreen screens and modals so they don't regress) are
 documented in [`frontend/docs/PWA_SETUP.md`](frontend/docs/PWA_SETUP.md).
 
+## UX highlights
+
+AppForge ships a pragmatic, keyboard-friendly UX:
+
+- **Consistent confirmations** — every destructive action (delete a
+  section, delete a project, delete a node, rollback a version, replace
+  a canvas on import) goes through a styled confirm dialog with a clear
+  impact summary. No more native `window.confirm` pop-ups.
+- **Contextual tooltips** — icon-only buttons (edit / add / delete) all
+  carry both an accessible `aria-label` and a visible tooltip on hover
+  and focus, so users never have to guess what an icon does.
+- **Smart node placement** — adding a node to the flow canvas uses a
+  non-overlap heuristic around the last created node, so newly-created
+  nodes never stack on top of one another.
+- **Toast feedback** — imports, exports, saves, duplications and
+  deletions push a small toast so silent actions stop feeling silent.
+- **Explicit "Open project"** — project cards expose a visible "Open
+  project →" affordance on hover and are also fully keyboard-activatable
+  via Enter / Space.
+- **Contextual add inputs** — adding an item to a roadmap section
+  reuses the parent title in the placeholder (e.g. `New item inside
+  "Frontend"...`). Enter saves, Escape cancels, blur auto-saves when
+  the value is non-empty.
+
 ## Modules
 
 ### 1. Roadmap (Mind Map)
 - Tree structure with sections and items
-- Inline editing (double-click to edit)
-- Add / delete nodes
-- Import / Export as `roadmap.md`
+- Inline editing — double-click OR use the pencil tooltip button
+- Add / delete nodes via confirm dialog (no more raw `window.confirm`)
+- Import / Export as `roadmap.md` with an explicit "replace roadmap"
+  acknowledgement before the destructive import fires
 
 **Markdown format:**
 ```md
@@ -67,15 +92,20 @@ documented in [`frontend/docs/PWA_SETUP.md`](frontend/docs/PWA_SETUP.md).
 ```
 
 ### 2. Projects (Flow UX)
-- Full-screen React Flow canvas
+- Full-screen React Flow canvas with enlarged, higher-contrast handles
 - Drag & drop nodes
 - Connect nodes with edges
-- Click a node → side panel (title, description, notes, items)
-- Auto-save (2s debounce)
-- Version history + rollback
-- Duplicate projects
-- Read-only mode
-- Import / Export as `project.md`
+- Click a node → side panel (title, description, notes, items) with
+  sticky footer save button and an explicit "Unsaved changes" badge
+- Auto-save (2s debounce) with toast confirmation on manual save
+- Smart non-overlapping placement for newly added nodes
+- Version history modal with per-entry date/time and a clear "Current"
+  badge on the latest snapshot
+- Rollback goes through a confirm dialog (no silent data loss)
+- Duplicate projects (confirmation toast on success)
+- Read-only mode (unchanged)
+- Import / Export as `project.md`, with the same explicit
+  "replace canvas" acknowledgement as the roadmap import
 
 **Markdown format:**
 ```md

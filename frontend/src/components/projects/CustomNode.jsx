@@ -1,29 +1,49 @@
 import React, { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
 
-const HANDLE_STYLE = { background: '#7c8ff8', border: '2px solid #131c2b' }
-
 function CustomNode({ data, selected }) {
-  const visibleItems = data.items?.slice(0, 3) || []
-  const hasMoreItems = (data.items?.length || 0) > 3
+  const items = data.items || []
+  const visibleItems = items.slice(0, 3)
+  const hiddenItems = Math.max(0, items.length - visibleItems.length)
 
   return (
-    <div className={`min-w-[180px] max-w-[260px] rounded-2xl border bg-[#131c2b] shadow-[0_10px_24px_rgba(0,0,0,0.3)] transition-all ${selected ? 'border-indigo-300/80 shadow-[0_0_0_2px_rgba(124,143,248,0.25)]' : 'border-[#2a3954] hover:border-indigo-300/50'}`}>
-      <Handle type="target" position={Position.Top} className="!h-3 !w-3" style={HANDLE_STYLE} />
+    <div className={`flow-node ${selected ? 'flow-node--selected' : ''}`}>
+      <Handle type="target" position={Position.Top} />
       <div className="px-4 py-3">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <p className="truncate text-sm font-semibold text-slate-100">{data.title || data.label || 'Untitled'}</p>
-          <span className="h-2 w-2 rounded-full bg-indigo-300" />
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <p className="text-sm font-semibold leading-snug text-slate-100 break-words">
+            {data.title || data.label || 'Untitled'}
+          </p>
+          <span
+            className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
+              selected ? 'bg-indigo-200' : 'bg-indigo-300'
+            }`}
+          />
         </div>
-        {data.description ? <p className="line-clamp-2 text-xs text-slate-400">{data.description}</p> : <p className="text-xs text-slate-500">No description</p>}
+        {data.description ? (
+          <p className="line-clamp-3 text-xs leading-relaxed text-slate-300/90">
+            {data.description}
+          </p>
+        ) : (
+          <p className="text-xs italic text-slate-500">No description</p>
+        )}
         {visibleItems.length ? (
-          <div className="mt-3 border-t border-[#2a3954] pt-2">
-            {visibleItems.map((item, i) => <p key={i} className="truncate text-xs text-slate-300">• {item}</p>)}
-            {hasMoreItems ? <p className="mt-1 text-xs text-slate-500">+{data.items.length - 3} more</p> : null}
+          <div className="flow-node__items-divider mt-3 space-y-1 pt-2">
+            {visibleItems.map((item, i) => (
+              <p key={i} className="truncate text-xs text-slate-200/90">
+                <span className="mr-1 text-indigo-300">•</span>
+                {item}
+              </p>
+            ))}
+            {hiddenItems ? (
+              <p className="mt-1 text-[0.7rem] font-medium uppercase tracking-wide text-indigo-300/80">
+                +{hiddenItems} more
+              </p>
+            ) : null}
           </div>
         ) : null}
       </div>
-      <Handle type="source" position={Position.Bottom} className="!h-3 !w-3" style={HANDLE_STYLE} />
+      <Handle type="source" position={Position.Bottom} />
     </div>
   )
 }
