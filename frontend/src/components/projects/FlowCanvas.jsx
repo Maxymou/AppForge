@@ -5,17 +5,13 @@ import '@xyflow/react/dist/style.css'
 import useProjectStore from '../../stores/projectStore'
 import CustomNode from './CustomNode'
 import NodePanel from './NodePanel'
-import { Badge, Button, ConfirmDialog, Modal, Textarea, useToast } from '../ui/primitives'
+import { ActionMenu, Badge, Button, Modal, Textarea, useToast } from '../ui/primitives'
 import MobileHeader from '../layout/MobileHeader'
 import SettingsModal from '../layout/SettingsModal'
 
 const NODE_TYPES = { custom: CustomNode }
 const DEFAULT_EDGE_OPTIONS = { type: 'smoothstep', style: { stroke: '#5f74dd', strokeWidth: 2 } }
-
-const mapProjectToFlow = (project) => ({
-  rfNodes: (project.nodes || []).map((n) => ({ id: n.nodeId, type: 'custom', position: { x: n.posX, y: n.posY }, data: { title: n.title, label: n.title, description: n.description || '', notes: n.notes || '', items: n.items || [] } })),
-  rfEdges: (project.edges || []).map((e) => ({ id: e.edgeId, source: e.source, target: e.target, sourceHandle: e.sourceHandle || null, ...DEFAULT_EDGE_OPTIONS }))
-})
+const mapProjectToFlow = (project) => ({ rfNodes: (project.nodes || []).map((n) => ({ id: n.nodeId, type: 'custom', position: { x: n.posX, y: n.posY }, data: { title: n.title, label: n.title, description: n.description || '', notes: n.notes || '', items: n.items || [] } })), rfEdges: (project.edges || []).map((e) => ({ id: e.edgeId, source: e.source, target: e.target, sourceHandle: e.sourceHandle || null, ...DEFAULT_EDGE_OPTIONS })) })
 
 export default function FlowCanvas() {
   const { id } = useParams(); const navigate = useNavigate(); const toast = useToast()
@@ -31,22 +27,16 @@ export default function FlowCanvas() {
   const [showImport, setShowImport] = useState(false)
   const [importText, setImportText] = useState('')
   const [importAcknowledged, setImportAcknowledged] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const [loading, setLoading] = useState(true)
   const isReadOnly = currentProject?.readOnly || false
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false
   const nodesRef = useRef(nodes); const edgesRef = useRef(edges)
   useEffect(()=>{nodesRef.current=nodes},[nodes]); useEffect(()=>{edgesRef.current=edges},[edges])
-
   useEffect(() => { (async()=>{setLoading(true); const p=await fetchProject(id); if(!p){navigate('/projects');return}; const {rfNodes,rfEdges}=mapProjectToFlow(p); setNodes(rfNodes); setEdges(rfEdges); setLoading(false) })() }, [id])
 
   const selectedNode = useMemo(() => nodes.find((n) => n.id === selectedNodeId) || null, [nodes, selectedNodeId])
   const handleConnect = useCallback((params) => { if (!isReadOnly) setEdges((eds) => addEdge({ ...params, ...DEFAULT_EDGE_OPTIONS }, eds)) }, [isReadOnly])
-
-  const handleAddNode = () => {
-    const node = { id: `node-${Date.now()}`, type: 'custom', position: { x: 140, y: 140 }, data: { title: 'Nouveau nœud', label: 'Nouveau nœud', description: '', notes: '', items: [] } }
-    setNodes((c) => [...c, node]); setSelectedNodeId(node.id)
-  }
+  const handleAddNode = () => { const node = { id: `node-${Date.now()}`, type: 'custom', position: { x: 140, y: 140 }, data: { title: 'Nouveau nœud', label: 'Nouveau nœud', description: '', notes: '', items: [] } }; setNodes((c) => [...c, node]); setSelectedNodeId(node.id) }
   const handleManualSave = async () => { await saveProject(id, nodesRef.current, edgesRef.current); toast.success('Projet enregistré') }
   const handleExport = async () => (await exportProject(id)) ? toast.success('Projet exporté') : toast.error("Échec de l'export")
   const handleImport = async () => { const p = await importProject(id, importText); if(p){const {rfNodes,rfEdges}=mapProjectToFlow(p); setNodes(rfNodes); setEdges(rfEdges); setShowImport(false); toast.success('Projet importé')} }
@@ -56,10 +46,10 @@ export default function FlowCanvas() {
   return (
     <div className="flex h-full bg-secondary">
       <div className="flex min-w-0 flex-1 flex-col">
-        <MobileHeader title={currentProject?.name || 'Projet'} actions={[{ key: 'add', label: 'Ajouter un nœud', onClick: handleAddNode }, { key: 'save', label: 'Enregistrer', onClick: handleManualSave, variant: 'secondary' }, { key: 'settings', label: 'Paramètres', onClick: () => setShowSettings(true), variant: 'secondary' }]} />
+        <MobileHeader title={currentProject?.name || 'Projet'} actions={[{ key: 'add', label: 'Ajouter', onClick: handleAddNode }, { key: 'save', label: 'Enregistrer', onClick: handleManualSave, variant: 'secondary' }]} menuActions={[{ key: 'import', label: 'Importer', onClick: () => setShowImport(true) }, { key: 'export', label: 'Exporter', onClick: handleExport }, { key: 'versions', label: 'Historique', onClick: async()=>{await fetchVersions(id); setShowVersions(true)} }, { key: 'settings', label: 'Paramètres', onClick: () => setShowSettings(true) }]} />
         <div className="hidden items-center justify-between gap-3 border-b border-border-subtle px-4 py-3 md:flex md:px-5">
           <div className="flex items-center gap-3"><button onClick={() => navigate('/projects')} className="icon-btn icon-btn-ghost">←</button><h2 className="text-sm font-semibold text-content md:text-base">{currentProject?.name}</h2>{isReadOnly ? <Badge tone="warning">Lecture seule</Badge> : null}</div>
-          <div className="flex items-center gap-2"><Button size="sm" onClick={handleAddNode}>Ajouter un nœud</Button><Button size="sm" variant="secondary" onClick={handleManualSave}>Enregistrer</Button><Button size="sm" variant="secondary" onClick={()=>setShowImport(true)}>Importer</Button><Button size="sm" variant="secondary" onClick={handleExport}>Exporter</Button><Button size="sm" variant="secondary" onClick={async()=>{await fetchVersions(id); setShowVersions(true)}}>Historique</Button><Button size="sm" variant="secondary" onClick={()=>setShowSettings(true)}>Paramètres</Button></div>
+          <div className="flex items-center gap-2"><Button size="sm" onClick={handleAddNode}>Ajouter un nœud</Button><Button size="sm" variant="secondary" onClick={handleManualSave}>Enregistrer</Button><ActionMenu label="Actions" items={[{ key: 'import', label: 'Importer', onClick: () => setShowImport(true) }, { key: 'export', label: 'Exporter', onClick: handleExport }, { key: 'history', label: 'Historique', onClick: async()=>{await fetchVersions(id); setShowVersions(true)} }, { key: 'settings', label: 'Paramètres', onClick: () => setShowSettings(true) }]} /></div>
         </div>
 
         {error ? <div className="mx-4 mt-2 rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">{error}</div> : null}
@@ -73,10 +63,8 @@ export default function FlowCanvas() {
       </div>
 
       {selectedNode ? <NodePanel mobile={isMobile} node={selectedNode} onUpdate={(nodeId, data) => setNodes((curr)=>curr.map((n)=>n.id===nodeId?{...n,data:{...n.data,...data,label:data.title||n.data.label}}:n))} onClose={() => setSelectedNodeId(null)} readOnly={isReadOnly} /> : null}
-
       <Modal open={showVersions} onClose={() => setShowVersions(false)} title="Historique" description="Restaurez une version précédente.">{versions.map((v)=><div key={v.id} className="mb-2 flex items-center justify-between rounded-xl border border-border-subtle px-3 py-2 text-sm"><span>{new Date(v.createdAt).toLocaleString('fr-FR')}</span><Button size="sm" variant="secondary" onClick={async()=>{const p=await rollback(id,v.id); if(p){const {rfNodes,rfEdges}=mapProjectToFlow(p); setNodes(rfNodes); setEdges(rfEdges); setShowVersions(false)}}}>Restaurer</Button></div>)}</Modal>
       <Modal open={showImport} onClose={() => setShowImport(false)} title="Importer un projet"><Textarea value={importText} onChange={(e)=>setImportText(e.target.value)} rows={10} className="font-mono"/><label className="mt-3 flex items-start gap-2 text-sm text-content-muted"><input type="checkbox" checked={importAcknowledged} onChange={(e)=>setImportAcknowledged(e.target.checked)} /><span>Je comprends que le canvas actuel sera remplacé.</span></label><Button className="mt-3 w-full" variant="danger" onClick={handleImport} disabled={!importText.trim()||!importAcknowledged}>Remplacer</Button></Modal>
-      <ConfirmDialog open={confirmDelete} onClose={() => setConfirmDelete(false)} onConfirm={() => {}} title="Supprimer le nœud ?" />
       <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   )
