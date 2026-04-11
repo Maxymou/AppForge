@@ -10,6 +10,7 @@ datasource db {
 
 model User {
   id        String   @id @default(cuid())
+  username  String   @default("Admin")
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
@@ -19,6 +20,8 @@ model User {
 model RoadmapNode {
   id        String        @id @default(cuid())
   title     String
+  comment   String?
+  code      String?
   parentId  String?
   parent    RoadmapNode?  @relation("NodeChildren", fields: [parentId], references: [id], onDelete: Cascade)
   children  RoadmapNode[] @relation("NodeChildren")
@@ -32,6 +35,8 @@ model Project {
   id          String           @id @default(cuid())
   name        String
   description String?
+  status      String           @default("idee")
+  comment     String?
   readOnly    Boolean          @default(false)
   nodes       ProjectNode[]
   edges       ProjectEdge[]
@@ -56,13 +61,14 @@ model ProjectNode {
 }
 
 model ProjectEdge {
-  id        String   @id @default(cuid())
-  projectId String
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  edgeId    String
-  source    String
-  target    String
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  projectId     String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  edgeId       String
+  source       String
+  target       String
+  sourceHandle String?
+  createdAt    DateTime @default(now())
 }
 
 model ProjectVersion {

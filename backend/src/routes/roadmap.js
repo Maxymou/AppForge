@@ -91,7 +91,7 @@ router.get('/', authMiddleware, async (req, res) => {
 
 // POST /api/roadmap/nodes
 router.post('/nodes', authMiddleware, async (req, res) => {
-  const { title, parentId, order } = req.body;
+  const { title, parentId, order, comment, code } = req.body;
 
   if (!title) {
     return res.status(400).json({ error: 'Title is required' });
@@ -111,7 +111,9 @@ router.post('/nodes', authMiddleware, async (req, res) => {
       data: {
         title,
         parentId: parentId || null,
-        order: nodeOrder
+        order: nodeOrder,
+        comment: comment || null,
+        code: code || null
       }
     });
     return res.status(201).json(node);
@@ -124,7 +126,7 @@ router.post('/nodes', authMiddleware, async (req, res) => {
 // PUT /api/roadmap/nodes/:id
 router.put('/nodes/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const { title, parentId, order, expanded } = req.body;
+  const { title, parentId, order, expanded, comment, code } = req.body;
 
   try {
     const existing = await prisma.roadmapNode.findUnique({ where: { id } });
@@ -138,7 +140,9 @@ router.put('/nodes/:id', authMiddleware, async (req, res) => {
         ...(title !== undefined && { title }),
         ...(parentId !== undefined && { parentId }),
         ...(order !== undefined && { order }),
-        ...(expanded !== undefined && { expanded })
+        ...(expanded !== undefined && { expanded }),
+        ...(comment !== undefined && { comment }),
+        ...(code !== undefined && { code })
       }
     });
     return res.json(updated);

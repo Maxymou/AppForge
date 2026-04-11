@@ -2,7 +2,7 @@ import React, { memo, useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Badge, Button, IconButton, Input, Textarea } from '../ui/primitives'
 
-const CloseIcon = () => (
+const FermerIcon = () => (
   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
   </svg>
@@ -19,21 +19,21 @@ const TrashIcon = () => (
   </svg>
 )
 
-function NodePanel({ node, onUpdate, onClose, readOnly }) {
-  const [title, setTitle] = useState('')
+function NodePanel({ node, onUpdate, onFermer, readOnly, mobile = false }) {
+  const [title, setTitre] = useState('')
   const [description, setDescription] = useState('')
   const [notes, setNotes] = useState('')
-  const [items, setItems] = useState([])
+  const [items, setÉléments] = useState([])
   const [newItem, setNewItem] = useState('')
   const [isDirty, setIsDirty] = useState(false)
 
   useEffect(() => {
     if (!node) return
 
-    setTitle(node.data?.title || node.data?.label || '')
+    setTitre(node.data?.title || node.data?.label || '')
     setDescription(node.data?.description || '')
     setNotes(node.data?.notes || '')
-    setItems(node.data?.items || [])
+    setÉléments(node.data?.items || [])
     setNewItem('')
     setIsDirty(false)
   }, [node])
@@ -47,14 +47,14 @@ function NodePanel({ node, onUpdate, onClose, readOnly }) {
   }, [node, onUpdate, title, description, notes, items, canSave])
 
   const removeItem = useCallback((indexToRemove) => {
-    setItems((currentItems) => currentItems.filter((_, index) => index !== indexToRemove))
+    setÉléments((currentÉléments) => currentÉléments.filter((_, index) => index !== indexToRemove))
     setIsDirty(true)
   }, [])
 
   const addItem = useCallback(() => {
     const nextItem = newItem.trim()
     if (!nextItem) return
-    setItems((currentItems) => [...currentItems, nextItem])
+    setÉléments((currentÉléments) => [...currentÉléments, nextItem])
     setNewItem('')
     setIsDirty(true)
   }, [newItem])
@@ -67,49 +67,49 @@ function NodePanel({ node, onUpdate, onClose, readOnly }) {
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: '100%', opacity: 0 }}
       transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-      className="surface-panel h-full w-[330px] rounded-l-2xl rounded-r-none border-r-0 md:w-[380px]"
+      className={`surface-panel ${mobile ? 'fixed inset-x-4 top-[max(72px,calc(var(--sat)+72px))] z-50 h-[70vh] w-auto rounded-2xl border' : 'h-full w-[330px] rounded-l-2xl rounded-r-none border-r-0 md:w-[380px]'}`}
     >
       <div className="flex h-full flex-col overflow-hidden">
         <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-border-subtle bg-surface px-4 py-3">
           <div className="min-w-0">
             <p className="text-xs font-medium uppercase tracking-wide text-content-muted">
-              Node editor
+              Éditeur de nœud
             </p>
             <p className="mt-0.5 truncate text-sm font-semibold text-content">
-              {title || 'Untitled node'}
+              {title || 'Nœud sans titre'}
             </p>
             <div className="mt-1.5 flex items-center gap-2">
               <Badge tone={readOnly ? 'warning' : 'success'}>
-                {readOnly ? 'Read-only' : 'Editable'}
+                {readOnly ? 'Lecture seule' : 'Modifiable'}
               </Badge>
               {isDirty && !readOnly ? (
-                <Badge tone="warning">Unsaved changes</Badge>
+                <Badge tone="warning">Modifications non enregistrées</Badge>
               ) : null}
             </div>
           </div>
-          <IconButton onClick={onClose} tooltip="Close" label="Close node editor">
-            <CloseIcon />
+          <IconButton onClick={onFermer} tooltip="Fermer" label="Fermer node editor">
+            <FermerIcon />
           </IconButton>
         </div>
 
         <div className="flex-1 space-y-5 overflow-y-auto p-4">
           <div>
             <label className="node-panel__label" htmlFor="node-title">
-              Title
+              Titre
             </label>
             <Input
               id="node-title"
               value={title}
               onChange={(e) => {
-                setTitle(e.target.value)
+                setTitre(e.target.value)
                 setIsDirty(true)
               }}
               disabled={readOnly}
-              placeholder="Node title"
+              placeholder="Titre du nœud"
               aria-invalid={isDirty && !title.trim()}
             />
             {isDirty && !title.trim() ? (
-              <p className="mt-1.5 text-xs text-red-300">A title is required.</p>
+              <p className="mt-1.5 text-xs text-red-300">Un titre est requis.</p>
             ) : null}
           </div>
 
@@ -126,7 +126,7 @@ function NodePanel({ node, onUpdate, onClose, readOnly }) {
               }}
               disabled={readOnly}
               rows={3}
-              placeholder="Describe this node..."
+              placeholder="Décrivez ce nœud..."
             />
           </div>
 
@@ -144,15 +144,15 @@ function NodePanel({ node, onUpdate, onClose, readOnly }) {
               disabled={readOnly}
               rows={4}
               className="font-mono"
-              placeholder="Additional notes..."
+              placeholder="Notes additionnelles..."
             />
           </div>
 
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <span className="node-panel__label !mb-0">Items</span>
+              <span className="node-panel__label !mb-0">Éléments</span>
               <span className="text-xs text-content-muted">
-                {items.length} {items.length === 1 ? 'item' : 'items'}
+                {items.length} {items.length === 1 ? 'élément' : 'éléments'}
               </span>
             </div>
             <div className="space-y-2">
@@ -170,8 +170,8 @@ function NodePanel({ node, onUpdate, onClose, readOnly }) {
                     {!readOnly ? (
                       <IconButton
                         onClick={() => removeItem(idx)}
-                        tooltip="Remove item"
-                        label={`Remove item ${item}`}
+                        tooltip="Supprimer l'élément"
+                        label={`Supprimer l'élément ${item}`}
                         variant="danger"
                       >
                         <TrashIcon />
@@ -181,7 +181,7 @@ function NodePanel({ node, onUpdate, onClose, readOnly }) {
                 ))}
               </AnimatePresence>
               {items.length === 0 ? (
-                <p className="text-xs italic text-content-muted">No items yet.</p>
+                <p className="text-xs italic text-content-muted">Aucun élément pour le moment.</p>
               ) : null}
             </div>
             {!readOnly ? (
@@ -195,11 +195,11 @@ function NodePanel({ node, onUpdate, onClose, readOnly }) {
                       addItem()
                     }
                   }}
-                  placeholder="Add item and press Enter"
-                  aria-label="New item"
+                  placeholder="Ajouter un élément puis Entrée"
+                  aria-label="Nouvel élément"
                 />
                 <Button size="sm" onClick={addItem} disabled={!newItem.trim()}>
-                  Add
+                  Ajouter
                 </Button>
               </div>
             ) : null}
@@ -211,9 +211,9 @@ function NodePanel({ node, onUpdate, onClose, readOnly }) {
             <Button className="w-full" onClick={save} disabled={!canSave}>
               {isDirty
                 ? title.trim()
-                  ? 'Save changes'
-                  : 'Title required'
-                : 'No changes'}
+                  ? 'Enregistrer'
+                  : 'Titre required'
+                : 'Aucun changement'}
             </Button>
           </div>
         ) : null}

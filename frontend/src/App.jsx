@@ -8,6 +8,7 @@ import MobileNav from './components/layout/MobileNav'
 import RoadmapView from './components/roadmap/RoadmapView'
 import ProjectList from './components/projects/ProjectList'
 import FlowCanvas from './components/projects/FlowCanvas'
+import LinksView from './components/layout/LinksView'
 
 const pageVariants = {
   initial: { opacity: 0, y: 12 },
@@ -89,6 +90,12 @@ function App() {
         <Route
           path="/projects"
           element={<RequireAuth><ProtectedLayout><motion.div key="projects" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition} className="h-full"><ProjectList /></motion.div></ProtectedLayout></RequireAuth>}
+        />
+
+
+        <Route
+          path="/links"
+          element={<RequireAuth><ProtectedLayout><motion.div key="links" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition} className="h-full"><LinksView /></motion.div></ProtectedLayout></RequireAuth>}
         />
 
         <Route

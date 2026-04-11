@@ -193,13 +193,13 @@ router.get('/', authMiddleware, async (req, res) => {
 
 // POST /api/projects
 router.post('/', authMiddleware, async (req, res) => {
-  const { name, description } = req.body;
+  const { name, description, status, comment } = req.body;
   if (!name) {
     return res.status(400).json({ error: 'Name is required' });
   }
   try {
     const project = await prisma.project.create({
-      data: { name, description: description || null }
+      data: { name, description: description || null, status: status || "idee", comment: comment || null }
     });
     return res.status(201).json(project);
   } catch (err) {
@@ -232,7 +232,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // PUT /api/projects/:id
 router.put('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const { name, description, readOnly } = req.body;
+  const { name, description, readOnly, status, comment } = req.body;
   try {
     const existing = await prisma.project.findUnique({ where: { id } });
     if (!existing) {
@@ -243,7 +243,9 @@ router.put('/:id', authMiddleware, async (req, res) => {
       data: {
         ...(name !== undefined && { name }),
         ...(description !== undefined && { description }),
-        ...(readOnly !== undefined && { readOnly })
+        ...(readOnly !== undefined && { readOnly }),
+        ...(status !== undefined && { status }),
+        ...(comment !== undefined && { comment })
       }
     });
     return res.json(updated);
@@ -350,7 +352,7 @@ router.delete('/:id/nodes/:nodeId', authMiddleware, async (req, res) => {
 // POST /api/projects/:id/edges
 router.post('/:id/edges', authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const { edgeId, source, target } = req.body;
+  const { edgeId, source, target, sourceHandle } = req.body;
   if (!edgeId || !source || !target) {
     return res.status(400).json({ error: 'edgeId, source and target are required' });
   }
@@ -360,7 +362,7 @@ router.post('/:id/edges', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Project not found' });
     }
     const edge = await prisma.projectEdge.create({
-      data: { projectId: id, edgeId, source, target }
+      data: { projectId: id, edgeId, source, target, sourceHandle: sourceHandle || null }
     });
     return res.status(201).json(edge);
   } catch (err) {
@@ -435,7 +437,8 @@ router.post('/:id/save', authMiddleware, async (req, res) => {
           projectId: id,
           edgeId: edge.id,
           source: edge.source,
-          target: edge.target
+          target: edge.target,
+          sourceHandle: edge.sourceHandle || null
         }
       });
     }
@@ -521,7 +524,8 @@ router.post('/:id/versions/:versionId/rollback', authMiddleware, async (req, res
           projectId: id,
           edgeId: edge.id,
           source: edge.source,
-          target: edge.target
+          target: edge.target,
+          sourceHandle: edge.sourceHandle || null
         }
       });
     }
@@ -590,7 +594,8 @@ router.post('/:id/duplicate', authMiddleware, async (req, res) => {
           projectId: newProject.id,
           edgeId: edge.edgeId,
           source: edge.source,
-          target: edge.target
+          target: edge.target,
+          sourceHandle: edge.sourceHandle || null
         }
       });
     }
