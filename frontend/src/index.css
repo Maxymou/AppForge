@@ -580,8 +580,10 @@ body {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  min-height: 164px;
-  padding: 0.95rem 0.95rem 1rem;
+  min-height: 172px;
+  width: 100%;
+  overflow: hidden;
+  padding: 0.95rem 0.95rem 3rem;
   cursor: pointer;
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
@@ -592,42 +594,83 @@ body {
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.35);
 }
 
-.project-card__open {
+
+.project-card__primary-action {
+  min-width: 0;
+  max-width: 100%;
+  padding-right: 2.9rem;
+}
+
+.project-card__menu {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  z-index: 2;
+}
+
+.project-card__gear {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #a8b6ff;
-  opacity: 0;
-  transform: translateX(-4px);
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--border-subtle);
+  background: rgba(18, 26, 42, 0.76);
+  color: var(--content-muted);
+  transition: border-color 0.16s ease, color 0.16s ease, background-color 0.16s ease;
 }
 
-.project-card:hover .project-card__open,
-.project-card:focus-visible .project-card__open {
-  opacity: 1;
-  transform: translateX(0);
+.project-card__gear:hover,
+.project-card__gear:focus-visible {
+  color: var(--content);
+  border-color: #3b4a66;
+  background: var(--surface-elevated);
 }
 
-@media (hover: none) {
-  .project-card__open { opacity: 1; transform: none; }
+.project-card__menu-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.4rem);
+  min-width: 7.5rem;
+  max-width: min(11rem, calc(100vw - 2rem));
+  border-radius: 0.7rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.38);
+  overflow: hidden;
 }
 
-/* Keep secondary actions always visible on touch devices. */
-.project-card__actions {
-  opacity: 1;
+.project-card__menu-item {
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.74rem;
+  color: var(--content-muted);
+  background: transparent;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .project-card__actions {
-    opacity: 0;
-    transition: opacity 0.16s ease;
+.project-card__menu-item:hover {
+  background: var(--surface-elevated);
+  color: var(--content);
+}
+
+.project-card__menu-item--danger {
+  color: #fda4af;
+}
+
+.project-card__menu-item--danger:hover {
+  background: rgba(248, 113, 113, 0.12);
+  color: #fecaca;
+}
+
+@media (max-width: 420px) {
+  .project-card {
+    padding: 0.85rem 0.85rem 3.1rem;
   }
-  .project-card:hover .project-card__actions,
-  .project-card:focus-within .project-card__actions {
-    opacity: 1;
+
+  .project-card__primary-action {
+    padding-right: 2.7rem;
   }
 }
 
