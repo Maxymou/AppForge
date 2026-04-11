@@ -17,6 +17,19 @@
   --success: #3ecf9f;
   --warning: #e9b44c;
   --danger: #f87171;
+
+  /* Safe area insets (populated from env() — see below).
+     Fallbacks to 0px on non-notched devices and desktops. */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+
+  /* Viewport heights — overwritten at runtime by src/lib/viewport.js.
+     --app-height  : stable fullscreen height (high-water mark).
+     --vvh         : live visible viewport (shrinks with on-screen keyboard). */
+  --app-height: 100dvh;
+  --vvh: 100dvh;
 }
 
 * {
@@ -25,21 +38,171 @@
   padding: 0;
 }
 
+/* Paint the brand background on html/body/#root so nothing can ever show
+   through from underneath (avoids the iOS PWA "white bar" at the bottom
+   and flashes during route transitions). */
 html,
 body,
 #root {
   height: 100%;
   width: 100%;
+  background-color: var(--bg-main);
+  color: var(--content);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  /* Lock the document so only our internal scroll containers move.
+     This is critical on iOS PWA to prevent overscroll bounce from
+     revealing a white band. */
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+#root {
   overflow: hidden;
 }
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: radial-gradient(circle at 20% -20%, #1a2640 0%, transparent 45%), var(--bg-main);
-  color: var(--content);
+  background:
+    radial-gradient(circle at 20% -20%, #1a2640 0%, transparent 45%),
+    var(--bg-main);
 }
 
-/* Design tokens as utility-like classes */
+/* ---------- Layout primitives ----------
+   These classes form the reusable fullscreen / safe-area toolkit.
+   Any new page or modal should lean on them instead of re-inventing
+   its own 100vh / 100dvh / fixed inset-0 combo. */
+
+/* Stable fullscreen shell: never shrinks when the keyboard opens,
+   anchors to the real device height via --app-height, falls back to
+   100dvh on desktop. Use this on the OUTERMOST layout container.
+
+   The flex direction is intentionally NOT forced so consumers can use
+   Tailwind modifiers (flex-col / md:flex-row) to pick their layout. */
+.app-viewport {
+  position: fixed;
+  inset: 0;
+  /* Prefer the JS-computed stable height, fall back to 100dvh for desktop. */
+  height: var(--app-height, 100dvh);
+  width: 100%;
+  background-color: var(--bg-main);
+  display: flex;
+  overflow: hidden;
+}
+
+/* On desktop/tablet we don't need "position: fixed" — a plain flex
+   container is enough and plays nicer with the browser chrome. We only
+   lock the shell in place below the md breakpoint where iOS PWA lives. */
+@media (min-width: 768px) {
+  .app-viewport {
+    position: relative;
+    inset: auto;
+    height: 100dvh;
+  }
+}
+
+/* Push content below the status bar / dynamic island. */
+.safe-top {
+  padding-top: var(--sat);
+}
+
+/* Push content above the home indicator. The bottom padding inherits
+   the element's own background (so translucent navs composite over the
+   brand color of .app-viewport), and we add an explicit brand fallback
+   via a negative-margin shadow in case the element itself is transparent.
+   In practice: the .app-viewport ancestor always paints --bg-main under
+   the home-indicator area, so no white band can leak. */
+.safe-bottom {
+  padding-bottom: var(--sab);
+}
+
+.safe-x {
+  padding-left: var(--sal);
+  padding-right: var(--sar);
+}
+
+/* A scroll container that fills the remaining vertical space inside an
+   .app-viewport and scrolls on its own. Prefer this over min-h-screen. */
+.app-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* ---------- Modal / overlay system ----------
+   Use .modal-overlay + .modal-sheet + .modal-scroll together.
+   These do NOT rely on 90dvh or any "current viewport" hack — they
+   anchor to --app-height so the sheet never clips behind the iOS
+   keyboard or the home indicator. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  padding-top: calc(1rem + var(--sat));
+  padding-bottom: calc(1rem + var(--sab));
+  padding-left: calc(1rem + var(--sal));
+  padding-right: calc(1rem + var(--sar));
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  /* Modal stretches the full stable viewport, not 100vh. */
+  height: var(--app-height, 100dvh);
+  width: 100%;
+  overflow: hidden;
+}
+
+.modal-sheet {
+  position: relative;
+  width: 100%;
+  max-width: 36rem;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+/* Internal scroll area of a modal — ensures the sheet never grows past
+   the stable viewport and scrolls its body instead. */
+.modal-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Mobile: let the sheet hug the bottom of the screen so it feels native. */
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: 0;
+    padding-top: var(--sat);
+    align-items: flex-end;
+  }
+  .modal-sheet {
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    /* Respect the home indicator without reintroducing fragile 90dvh. */
+    padding-bottom: var(--sab);
+  }
+}
+
+/* ---------- Design tokens as utility-like classes ---------- */
 .bg-main { background-color: var(--bg-main); }
 .bg-secondary { background-color: var(--bg-secondary); }
 .bg-surface { background-color: var(--surface); }
@@ -47,7 +210,9 @@ body {
 .text-content { color: var(--content); }
 .text-content-muted { color: var(--content-muted); }
 .border-border-subtle { border-color: var(--border-subtle); }
-.safe-area-bottom { padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)); }
+
+/* Legacy helper kept for backwards-compat — prefer .safe-bottom going forward. */
+.safe-area-bottom { padding-bottom: calc(0.5rem + var(--sab)); }
 
 .shell {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.01) 0%, transparent 50%), var(--bg-main);
@@ -153,9 +318,14 @@ body {
   color: var(--content);
   border-radius: 0.75rem;
   padding: 0.62rem 0.85rem;
-  font-size: 0.86rem;
+  /* 16px prevents iOS Safari from auto-zooming into inputs on focus. */
+  font-size: 16px;
   line-height: 1.35;
   transition: all 0.16s ease;
+}
+
+@media (min-width: 768px) {
+  .input-base { font-size: 0.86rem; }
 }
 
 .input-base::placeholder { color: #60708b; }

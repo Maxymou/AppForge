@@ -8,12 +8,30 @@ const navItems = [
   { to: '/projects', label: 'Projects', icon: <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg> }
 ]
 
+/**
+ * MobileNav is rendered as a flex child (NOT `position: fixed`) inside the
+ * stable .app-viewport shell. That way:
+ *
+ *   1. It naturally sits at the bottom of the main column.
+ *   2. It scrolls-with the stable viewport and never collides with the
+ *      home indicator or the iOS keyboard.
+ *   3. The .safe-bottom class pads AND paints the safe area so there is no
+ *      white band leaking through under the home indicator.
+ *
+ * On desktop (md+) it's hidden entirely; the Sidebar takes over navigation.
+ */
 export default function MobileNav() {
   const { logout } = useAuthStore()
   const navigate = useNavigate()
 
   return (
-    <motion.nav initial={{ y: 80 }} animate={{ y: 0 }} className="safe-area-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border-subtle bg-[#0c1321]/94 px-3 py-2 backdrop-blur-xl md:hidden">
+    <motion.nav
+      initial={{ y: 40, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.22 }}
+      className="safe-bottom z-40 border-t border-border-subtle bg-[#0c1321]/94 px-3 pt-2 backdrop-blur-xl md:hidden"
+      style={{ backgroundColor: 'rgba(12, 19, 33, 0.94)' }}
+    >
       <div className="mx-auto flex max-w-md items-center justify-between rounded-2xl border border-border-subtle bg-surface px-2 py-1.5">
         {navItems.map((item) => (
           <NavLink key={item.to} to={item.to} className={({ isActive }) => `flex min-w-[88px] flex-col items-center gap-1 rounded-xl px-3 py-2 text-xs font-medium transition ${isActive ? 'bg-surface-elevated text-content' : 'text-content-muted'}`}>

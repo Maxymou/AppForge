@@ -20,19 +20,35 @@ const pageTransition = {
   ease: 'easeOut'
 }
 
+/**
+ * ProtectedLayout
+ * ---------------
+ * The outermost shell of the authenticated area. It uses .app-viewport so
+ * it is anchored to the stable --app-height on mobile (and degrades to a
+ * normal flex column on desktop via the CSS media query).
+ *
+ * Mobile: Sidebar is hidden, MobileNav is rendered INSIDE the column and
+ * paints the bottom safe area via .safe-bottom, so the home-indicator zone
+ * stays painted in brand color (no white leak).
+ *
+ * Desktop (>= md): Sidebar gets its own rail on the left, MobileNav is gone.
+ */
 function ProtectedLayout({ children }) {
   return (
-    <div className="shell flex h-full w-full overflow-hidden">
-      <div className="hidden md:flex md:px-3 md:py-3">
+    // .app-viewport = stable fullscreen shell anchored on --app-height.
+    // Flex direction stays the default (row) so the sidebar sits next to
+    // the main column on desktop. On mobile the sidebar is hidden, so the
+    // single <main> child expands to fill the entire stable viewport.
+    <div className="app-viewport shell">
+      <aside className="hidden md:flex md:px-3 md:py-3">
         <Sidebar />
-      </div>
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden pb-[72px] md:pb-3 md:pr-3">
-        <div className="surface-card flex-1 overflow-hidden rounded-none border-x-0 border-b-0 md:rounded-2xl md:border">
+      </aside>
+
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden md:py-3 md:pr-3">
+        <div className="surface-card flex min-h-0 flex-1 overflow-hidden rounded-none border-x-0 border-t-0 md:rounded-2xl md:border">
           {children}
         </div>
-        <div className="md:hidden">
-          <MobileNav />
-        </div>
+        <MobileNav />
       </main>
     </div>
   )
