@@ -20,7 +20,7 @@
   --z-base-canvas: 0;
   --z-navigation: 20;
   --z-dropdown: 80;
-  --z-modal: 100;
+  --z-modal: 140;
   --z-overlay-critical: 120;
 
   /* Safe area insets (populated from env() — see below).
