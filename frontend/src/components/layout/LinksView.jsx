@@ -64,13 +64,20 @@ export default function LinksView() {
           <div className="space-y-3">
             {links.map((item) => (
               <Card key={item.id} className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-content">{item.title}</p>
-                    <a className="text-xs text-indigo-300" href={item.url} target="_blank" rel="noreferrer">{item.url}</a>
+                    <a
+                      className="mt-1 block break-all text-sm text-indigo-300 hover:text-indigo-200"
+                      href={item.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {item.url}
+                    </a>
                     {item.note ? <p className="mt-1 text-xs text-content-muted">{item.note}</p> : null}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex shrink-0 gap-2 sm:ml-4">
                     <Button size="sm" variant="secondary" onClick={() => openEdit(item)}>Éditer</Button>
                     <Button size="sm" variant="danger" onClick={async () => {
                       const ok = await deleteLink(item.id)

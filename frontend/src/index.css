@@ -386,7 +386,9 @@ body {
   .input-base { font-size: 0.86rem; }
 }
 
-.input-base::placeholder { color: #60708b; }
+/* Placeholder color: ~5.2:1 contrast on the input background (#0f1727),
+   enough for comfortable reading outdoors while still feeling muted. */
+.input-base::placeholder { color: #7a8aa3; }
 
 .input-base:focus {
   outline: none;
@@ -757,10 +759,30 @@ body {
   .react-flow__attribution { display: none; }
   .react-flow__controls { bottom: 12px; right: 10px; }
   .tree-node__card { border-radius: 0.8rem; }
+
+  /* Toasts must sit ABOVE the floating MobileNav capsule on mobile.
+     The nav occupies ~62px + its own safe-bottom padding, so we push the
+     toast stack up by ~5.25rem plus the device's safe-area inset. */
   .toast-stack {
     left: calc(0.75rem + var(--sal));
     right: calc(0.75rem + var(--sar));
-    bottom: calc(0.8rem + var(--sab));
+    bottom: calc(5.25rem + var(--sab));
     max-width: none;
   }
+
+  /* WCAG 2.5.5 tap targets — stretch small buttons to 44px min-height on
+     mobile without touching their padding / font-size (so desktop density
+     stays unchanged). */
+  .btn { min-height: 44px; }
+
+  /* Bump the base icon button footprint on mobile to meet a comfortable
+     finger target. 40px visual + inter-element gap yields an effective
+     ≥44px hit area. */
+  .icon-btn { width: 2.5rem; height: 2.5rem; }
+
+  /* Project card gear button matches the new icon-button footprint, and
+     the primary-action reserved padding grows so the "Ouvrir" button
+     doesn't collide with the enlarged absolutely-positioned gear. */
+  .project-card__gear { width: 2.5rem; height: 2.5rem; }
+  .project-card__primary-action { padding-right: 3.25rem; }
 }
