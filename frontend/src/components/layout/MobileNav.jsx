@@ -17,12 +17,12 @@ export default function MobileNav() {
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `flex min-h-[44px] min-w-[6rem] flex-col items-center justify-center gap-0.5 rounded-[1.05rem] px-2 py-1.5 text-[10px] font-medium transition ${
+              `flex min-h-[44px] min-w-[6rem] flex-col items-center justify-center gap-0.5 rounded-[1.05rem] px-2 py-1.5 text-[11px] font-medium transition ${
                 isActive ? 'bg-surface-elevated text-content' : 'text-content-muted'
               }`
             }
           >
-            <span className="text-[0.95rem]">{item.icon}</span><span>{item.label}</span>
+            <span className="text-[1.05rem]" aria-hidden>{item.icon}</span><span>{item.label}</span>
           </NavLink>
         ))}
       </div>

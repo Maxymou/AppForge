@@ -6,12 +6,18 @@
     <!--
       Viewport: viewport-fit=cover is MANDATORY for iOS standalone PWA so that
       the app draws under the dynamic island / home indicator and we can use
-      env(safe-area-inset-*) via CSS. maximum-scale=1 + user-scalable=no
-      prevents iOS from zooming on input focus.
+      env(safe-area-inset-*) via CSS.
+
+      We deliberately DO NOT set maximum-scale=1 / user-scalable=no: blocking
+      pinch-zoom violates WCAG 1.4.4 (Resize Text) and is unnecessary because
+      iOS Safari only auto-zooms on input focus when the input's computed
+      font-size is under 16px. Our .input-base class (src/index.css) pins
+      inputs to 16px on mobile specifically to prevent that focus-zoom, so
+      leaving user zoom enabled is safe.
     -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
 
     <!-- Theme color: must match --bg-main and manifest background_color -->

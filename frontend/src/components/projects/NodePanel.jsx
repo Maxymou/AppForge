@@ -20,6 +20,15 @@ function NodePanel({ node, onUpdate, onClose, readOnly, mobile = false }) {
     setIsDirty(false)
   }, [node])
 
+  // Parity with Modal primitive: close on Escape. Bound unconditionally so
+  // both the mobile overlay and desktop side-sheet behave the same way.
+  useEffect(() => {
+    if (!node) return undefined
+    const onKey = (event) => { if (event.key === 'Escape') onClose?.() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [node, onClose])
+
   const canSave = isDirty && title.trim().length > 0
   const save = useCallback(() => { if (node && canSave) { onUpdate?.(node.id, { title: title.trim(), description, notes, items }); setIsDirty(false) } }, [node, onUpdate, title, description, notes, items, canSave])
   const removeItem = useCallback((idx) => { setItems((current) => current.filter((_, i) => i !== idx)); setIsDirty(true) }, [])
@@ -52,10 +61,21 @@ function NodePanel({ node, onUpdate, onClose, readOnly, mobile = false }) {
   )
 
   if (mobile) {
+    // Size from --app-height (the iOS-stable viewport) instead of raw vh:
+    // raw 82vh can exceed the padded .modal-overlay on iOS PWA and push the
+    // sticky footer past the home indicator. maxHeight: 100% keeps the sheet
+    // inside the overlay's safe-area padding, the calc() caps it at 82% of
+    // the stable viewport or 680px — whichever is smaller.
     return (
       <AnimatePresence>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-          <motion.div initial={{ opacity: 0, y: 24, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12, scale: 0.98 }} className="surface-panel flex h-[min(82vh,680px)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border">
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.98 }}
+            className="surface-panel flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border"
+            style={{ maxHeight: 'min(calc(var(--app-height, 100dvh) * 0.82), 680px)' }}
+          >
             {content}
           </motion.div>
         </motion.div>

@@ -21,7 +21,10 @@ export default function LoginPage() {
     // .app-viewport anchors the login shell to the stable --app-height so
     // the card never jumps when the iOS keyboard opens on focus.
     // .safe-x / safe-top / safe-bottom paint the notch + home indicator.
-    <div className="app-viewport safe-top safe-bottom safe-x relative items-center justify-center overflow-hidden bg-main px-4 py-6 sm:px-6 sm:py-8">
+    // overflow-y-auto lets the card scroll when the iOS keyboard claims half
+    // the viewport on short phones (iPhone SE): without this, the password
+    // field can end up hidden behind the keyboard.
+    <div className="app-viewport safe-top safe-bottom safe-x relative items-center justify-center overflow-y-auto overflow-x-hidden bg-main px-4 py-6 sm:px-6 sm:py-8">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(124,143,248,0.17),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(62,207,159,0.08),transparent_35%)]" />
       <motion.div
         initial={{ opacity: 0, y: 16 }}

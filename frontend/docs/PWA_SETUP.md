@@ -217,10 +217,26 @@ already brand-dark. No white flash on PWA cold start.
 - ❌ `min-h-screen`, `h-screen`, `h-[100vh]`, `h-[100dvh]` on the outer shell.
 - ❌ `fixed inset-0` combined with a fixed height hack for a modal.
 - ❌ `max-h-[90dvh]` for modal bodies — use `.modal-scroll` inside a `.modal-sheet`.
+- ❌ Raw `vh` / `dvh` inside a `.modal-overlay` (e.g. `h-[min(82vh,680px)]`).
+  The overlay is already anchored to `--app-height` and padded by all four
+  safe insets; raw `vh` can exceed the padded box on iOS PWA and push the
+  sheet past the home indicator. Use
+  `style={{ maxHeight: 'min(calc(var(--app-height) * 0.82), 680px)' }}`
+  instead. This is the pattern used by `NodePanel` mobile.
 - ❌ Reading `visualViewport.height` directly in React — use the CSS vars.
 - ❌ Adding `<div className="fixed bottom-0 ...">` at the root. Put the bar
   inside the `.app-viewport` flex column so it naturally respects the stable
   height.
+- ❌ Setting `user-scalable=no` / `maximum-scale=1` on the viewport meta.
+  WCAG 1.4.4 forbids blocking zoom, and the anti-iOS-focus-zoom trick is
+  already handled by `.input-base` pinning inputs to 16 px on mobile.
+- ❌ Hard-coding `h-8 w-8` on an IconButton without a `md:` prefix. It will
+  override the mobile `.icon-btn` 2.5 rem rule and re-create a WCAG 2.5.5
+  tap-target violation. Use `md:h-8 md:w-8` to keep desktop compact.
+- ❌ Placing floating UI (toasts, FABs) at `bottom: var(--sab)` without
+  accounting for the height of `.mobile-nav-region` — it will render
+  *behind* the nav on mobile. Use `bottom: calc(5.25rem + var(--sab))` or
+  similar on mobile breakpoints.
 
 ---
 

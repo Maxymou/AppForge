@@ -54,17 +54,31 @@ export function ActionMenu({ label = 'Actions', items = [] }) {
     if (!triggerRef.current || typeof window === 'undefined') return
 
     const rect = triggerRef.current.getBoundingClientRect()
-    const viewportPadding = 8
+    // Fold the device safe-area insets (populated by src/lib/viewport.js)
+    // into the edge padding so the menu never clips under the notch,
+    // dynamic island or home indicator on notched devices in landscape.
+    const rootStyle = getComputedStyle(document.documentElement)
+    const readPx = (name) => {
+      const raw = rootStyle.getPropertyValue(name).trim()
+      const n = parseFloat(raw)
+      return Number.isFinite(n) ? n : 0
+    }
+    const base = 8
+    const padLeft = base + readPx('--sal')
+    const padRight = base + readPx('--sar')
+    const padTop = base + readPx('--sat')
+    const padBottom = base + readPx('--sab')
+
     const menuWidth = menuRef.current?.offsetWidth || 176
     const menuHeight = menuRef.current?.offsetHeight || 0
 
     let left = rect.right - menuWidth
-    if (left < viewportPadding) left = viewportPadding
-    if (left + menuWidth > window.innerWidth - viewportPadding) left = Math.max(viewportPadding, window.innerWidth - menuWidth - viewportPadding)
+    if (left < padLeft) left = padLeft
+    if (left + menuWidth > window.innerWidth - padRight) left = Math.max(padLeft, window.innerWidth - menuWidth - padRight)
 
     let top = rect.bottom + 8
-    if (menuHeight && top + menuHeight > window.innerHeight - viewportPadding) {
-      top = Math.max(viewportPadding, rect.top - menuHeight - 8)
+    if (menuHeight && top + menuHeight > window.innerHeight - padBottom) {
+      top = Math.max(padTop, rect.top - menuHeight - 8)
     }
 
     setPosition({

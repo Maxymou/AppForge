@@ -356,3 +356,46 @@ AppForge/
 - Flow: mini-carte masquée sur mobile et handles de sortie par item de nœud (`sourceHandle`) pour des connexions fines.
 
 > Après mise à jour, exécutez les migrations Prisma au déploiement (`docker compose up -d --build` les applique via le démarrage backend).
+
+## PWA + mobile UI/UX hardening (avril 2026)
+
+Passe de durcissement PWA + ergonomie mobile. Rapport complet dans
+[`PWA_UIUX_AUDIT.md`](PWA_UIUX_AUDIT.md).
+
+**Bugs corrigés**
+
+- `NodePanel` mobile: plus de `82vh` brut — la feuille est désormais ancrée
+  à `--app-height`, donc le footer sticky ne dépasse plus jamais sous
+  l'indicateur home iOS.
+- Toasts mobiles: ne passent plus **derrière** la navigation flottante du bas.
+- Écran de connexion: la carte défile désormais quand le clavier iOS réclame
+  la moitié de l'écran (iPhone SE + clavier ouvert).
+- `LinksView`: les URLs longues ne provoquent plus de scroll horizontal sur
+  iPhone SE; les actions se plient sous le contenu en mobile.
+- `ActionMenu` respecte désormais les safe areas (`--sat/--sab/--sal/--sar`)
+  pour ne plus clipper sous l'encoche en paysage.
+
+**Accessibilité**
+
+- Pinch-zoom **ré-activé** sur toutes les pages (suppression de
+  `user-scalable=no, maximum-scale=1` — respect de WCAG 1.4.4). Les champs
+  restent à 16 px sur mobile, donc iOS n'effectue toujours pas de zoom
+  automatique au focus.
+- Tous les boutons (`.btn`) atteignent **44 px de hauteur minimale** sur
+  mobile (WCAG 2.5.5).
+- Les `.icon-btn` + la roue de projet passent à **40 px carré** sur mobile
+  (HIG Apple, zone de touche effective ≥ 44 px avec l'inter-espacement).
+- La `NodePanel` mobile se ferme sur `Escape` (parité avec `Modal`).
+- Contraste du placeholder des champs relevé à ~5.2:1.
+
+**Polish**
+
+- Navigation mobile: labels passés en `11px` + emoji en `1.05rem`, avec
+  `aria-hidden` sur les emoji (lu par les lecteurs d'écran uniquement via
+  le label texte).
+- `TreeNode` Roadmap: les overrides de taille des IconButton sont scopés à
+  `md:` afin que la règle mobile de `.icon-btn` prenne effet.
+
+Voir [`PWA_UIUX_AUDIT.md`](PWA_UIUX_AUDIT.md) pour la liste exhaustive des
+fichiers modifiés, la checklist PWA/iOS/Android et le plan de test physique
+post-merge.

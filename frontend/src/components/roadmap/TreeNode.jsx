@@ -44,7 +44,7 @@ export default function TreeNode({ node, depth = 0 }) {
             </div>
           </div>
 
-          {!isEditing && <div className="tree-node__actions flex shrink-0 items-center gap-1 self-end sm:self-auto"><IconButton className="h-8 w-8" onClick={() => setShowEditor(true)} tooltip="Éditer" label="Éditer">✎</IconButton><IconButton className="h-8 w-8" onClick={() => setIsAddingChild(true)} tooltip="Ajouter un enfant" label="Ajouter un enfant">+</IconButton><IconButton className="h-8 w-8" onClick={() => setConfirmOpen(true)} tooltip="Supprimer" label="Supprimer" variant="danger">×</IconButton></div>}
+          {!isEditing && <div className="tree-node__actions flex shrink-0 items-center gap-1 self-end sm:self-auto"><IconButton className="md:h-8 md:w-8" onClick={() => setShowEditor(true)} tooltip="Éditer" label="Éditer">✎</IconButton><IconButton className="md:h-8 md:w-8" onClick={() => setIsAddingChild(true)} tooltip="Ajouter un enfant" label="Ajouter un enfant">+</IconButton><IconButton className="md:h-8 md:w-8" onClick={() => setConfirmOpen(true)} tooltip="Supprimer" label="Supprimer" variant="danger">×</IconButton></div>}
         </div>
       </div>
 
