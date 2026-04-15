@@ -35,6 +35,8 @@ export default function FlowCanvas() {
   const { isMobileViewport, isStandalonePWA, isDesktop } = useDeviceMode()
   const showMiniMap = isDesktop && !isStandalonePWA
   const showControls = isDesktop && !isStandalonePWA
+  const showDesktopNodePanel = Boolean(selectedNode) && !isMobileViewport && !isStandalonePWA
+  const showMobileNodePanel = Boolean(selectedNode) && (isMobileViewport || isStandalonePWA)
   const isReadOnly = currentProject?.readOnly || false
   const nodesRef = useRef(nodes); const edgesRef = useRef(edges)
 
@@ -78,7 +80,8 @@ export default function FlowCanvas() {
         </div>
       </div>
 
-      {selectedNode ? <NodePanel mobile={isMobileViewport || isStandalonePWA} node={selectedNode} onUpdate={(nodeId, data) => setNodes((curr)=>curr.map((n)=>n.id===nodeId?{...n,data:{...n.data,...data,label:data.title||n.data.label}}:n))} onClose={() => setSelectedNodeId(null)} readOnly={isReadOnly} /> : null}
+      {showDesktopNodePanel ? <NodePanel mobile={false} node={selectedNode} onUpdate={(nodeId, data) => setNodes((curr)=>curr.map((n)=>n.id===nodeId?{...n,data:{...n.data,...data,label:data.title||n.data.label}}:n))} onClose={() => setSelectedNodeId(null)} readOnly={isReadOnly} /> : null}
+      {showMobileNodePanel ? <NodePanel mobile node={selectedNode} onUpdate={(nodeId, data) => setNodes((curr)=>curr.map((n)=>n.id===nodeId?{...n,data:{...n.data,...data,label:data.title||n.data.label}}:n))} onClose={() => setSelectedNodeId(null)} readOnly={isReadOnly} /> : null}
       <Modal open={showVersions} onClose={() => setShowVersions(false)} title="Historique" description="Restaurez une version précédente.">{versions.map((v)=><div key={v.id} className="mb-2 flex items-center justify-between rounded-xl border border-border-subtle px-3 py-2 text-sm"><span>{new Date(v.createdAt).toLocaleString('fr-FR')}</span><Button size="sm" variant="secondary" onClick={async()=>{const p=await rollback(id,v.id); if(p){const {rfNodes,rfEdges}=mapProjectToFlow(p); setNodes(rfNodes); setEdges(rfEdges); setShowVersions(false)}}}>Restaurer</Button></div>)}</Modal>
       <Modal open={showImport} onClose={() => setShowImport(false)} title="Importer un projet"><Textarea value={importText} onChange={(e)=>setImportText(e.target.value)} rows={10} className="font-mono"/><label className="mt-3 flex items-start gap-2 text-sm text-content-muted"><input type="checkbox" checked={importAcknowledged} onChange={(e)=>setImportAcknowledged(e.target.checked)} /><span>Je comprends que le canvas actuel sera remplacé.</span></label><Button className="mt-3 w-full" variant="danger" onClick={handleImport} disabled={!importText.trim()||!importAcknowledged}>Remplacer</Button></Modal>
       <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
