@@ -94,7 +94,7 @@ export default function FlowCanvas() {
   if (loading) return <div className="flex h-full items-center justify-center bg-secondary">Chargement...</div>
 
   return (
-    <div className="flex h-full min-w-0 bg-secondary">
+    <div className="flex h-full min-w-0 flex-1 bg-secondary">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <MobileHeader
           title={currentProject?.name || 'Projet'}

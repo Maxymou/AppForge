@@ -45,7 +45,7 @@ export default function LinksView() {
   const total = useMemo(() => links.length, [links])
 
   return (
-    <div className="flex h-full flex-col bg-secondary">
+    <div className="flex h-full min-w-0 flex-1 flex-col bg-secondary">
       <MobileHeader title="Liens" subtitle={`${total} ${total > 1 ? 'liens' : 'lien'}`} primaryAction={{ key: 'add', label: 'Ajouter', onClick: openCreate }} />
       <div className="hidden border-b border-border-subtle px-5 py-4 md:block">
         <div className="flex items-center justify-between">
