@@ -84,18 +84,18 @@ function App() {
 
         <Route
           path="/roadmap"
-          element={<RequireAuth><ProtectedLayout><motion.div key="roadmap" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition} className="h-full"><RoadmapView /></motion.div></ProtectedLayout></RequireAuth>}
+          element={<RequireAuth><ProtectedLayout><motion.div key="roadmap" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition} className="flex h-full min-w-0 flex-1"><RoadmapView /></motion.div></ProtectedLayout></RequireAuth>}
         />
 
         <Route
           path="/projects"
-          element={<RequireAuth><ProtectedLayout><motion.div key="projects" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition} className="h-full"><ProjectList /></motion.div></ProtectedLayout></RequireAuth>}
+          element={<RequireAuth><ProtectedLayout><motion.div key="projects" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition} className="flex h-full min-w-0 flex-1"><ProjectList /></motion.div></ProtectedLayout></RequireAuth>}
         />
 
 
         <Route
           path="/links"
-          element={<RequireAuth><ProtectedLayout><motion.div key="links" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition} className="h-full"><LinksView /></motion.div></ProtectedLayout></RequireAuth>}
+          element={<RequireAuth><ProtectedLayout><motion.div key="links" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition} className="flex h-full min-w-0 flex-1"><LinksView /></motion.div></ProtectedLayout></RequireAuth>}
         />
 
         <Route
