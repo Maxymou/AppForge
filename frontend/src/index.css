@@ -159,6 +159,16 @@ body {
   padding-right: var(--sar);
 }
 
+/* On desktop, horizontal safe-area insets create a visible right rail in the
+   authenticated shell (the shell background shows through behind surface-card).
+   Keep notch handling on mobile, but neutralize it from md and up. */
+@media (min-width: 768px) {
+  .safe-x {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
 /* A scroll container that fills the remaining vertical space inside an
    .app-viewport and scrolls on its own. Prefer this over min-h-screen. */
 .app-scroll {
