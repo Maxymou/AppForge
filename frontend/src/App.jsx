@@ -100,7 +100,7 @@ function App() {
 
         <Route
           path="/projects/:id"
-          element={<RequireAuth><ProtectedLayout><motion.div key="flow-canvas" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition} className="h-full"><FlowCanvas /></motion.div></ProtectedLayout></RequireAuth>}
+          element={<RequireAuth><ProtectedLayout><motion.div key="flow-canvas" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition} className="flex h-full min-w-0 flex-1"><FlowCanvas /></motion.div></ProtectedLayout></RequireAuth>}
         />
 
         <Route path="*" element={<Navigate to="/" replace />} />
