@@ -10,7 +10,7 @@ export function AppForgeBrand({ compact = false }) {
   return (
     <div className="flex items-center gap-3">
       <div className="app-logo">
-        <span className="app-logo__inner">AF</span>
+        <img className="app-logo__mark" src="/logo-mark.png" alt="AppForge" width="40" height="40" />
       </div>
       {!compact && (
         <div>

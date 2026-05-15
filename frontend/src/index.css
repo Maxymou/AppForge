@@ -290,18 +290,19 @@ body {
   height: 2.5rem;
   width: 2.5rem;
   border-radius: 0.9rem;
-  background: linear-gradient(135deg, #7387ff, #5263ca);
-  border: 1px solid rgba(197, 205, 255, 0.45);
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
-.app-logo__inner {
-  color: white;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  font-weight: 700;
+.app-logo__mark {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .btn {
